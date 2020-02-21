@@ -161,21 +161,21 @@ gs2 <- gstat(formula = avgBasis2019 ~ 1, locations = basisSP, nmax = 1, set = li
 
 
 
-library(jsonlite)
-
-o <- data.frame("lat" = 40.19067, "lng" = -92.60359)
-d <- data.frame("lat" = 39.98886, "lng" = -94.80355)
-(url <- paste0("http://router.project-osrm.org/route/v1/driving/", 
-               o$lng,",",o$lat,";",d$lng,",",d$lat,"?overview=full"))
-
-system.time({
-  route <- fromJSON(url)
-})
-
-route$routes$distance
-# 251170.5
-route$routes$distance/1609
-# 156.1035
+# library(jsonlite)
+# 
+# o <- data.frame("lat" = 40.19067, "lng" = -92.60359)
+# d <- data.frame("lat" = 39.98886, "lng" = -94.80355)
+# (url <- paste0("http://router.project-osrm.org/route/v1/driving/", 
+#                o$lng,",",o$lat,";",d$lng,",",d$lat,"?overview=full"))
+# 
+# system.time({
+#   route <- fromJSON(url)
+# })
+# 
+# route$routes$distance
+# # 251170.5
+# route$routes$distance/1609
+# # 156.1035
 
 
 

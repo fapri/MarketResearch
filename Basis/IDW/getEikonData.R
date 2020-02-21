@@ -13,7 +13,7 @@ allBasis = data.frame(matrix(ncol = 5, nrow = 0))
 temp = data.frame()
 for (i in 1:nrow(locations)) {
   temp = get_data(instruments = list(locations$Instrument[i]),
-                  fields = list("CF_NAME", "CF_BID", "CF_DATE", "GEN_TEXT16", "ROW80_1", "ROW80_2", "GN_TXT16_2", "GN_TXT16_4", "ROW80_3"))
+                  fields = list("CF_NAME", "CF_BID", "CF_DATE", "ROW80_1", "ROW80_2", "GN_TXT16_2", "GN_TXT16_4", "ROW80_3"))
   allBasis = rbind(allBasis, cbind(temp, "Location" = rep(levels(droplevels(locations$CF_NAME[i])), length.out = nrow(temp))))
   temp = data.frame()
   print(i)
