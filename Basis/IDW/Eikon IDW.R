@@ -19,6 +19,9 @@ spotOnly = subset(spotOnly, select = -c(GEN_TEXT16, Location))
 colnames(spotOnly) = c("instrument", "contractName", "basis", "date", "terminalName", "address", "county", "cropType", "phoneNumber")
 
 spotOnly = spotOnly[-which(spotOnly$instrument == "CORNADMMCN-C1"),]
+spotOnly = spotOnly[-which(spotOnly$instrument == "CORNADMSNV-C1"),]
+
+
 
 # Fixed row where data was offset
 rowToFix = which(spotOnly$instrument == "CORNGFGBTH-C1")
@@ -79,69 +82,52 @@ spotOnly$address[which(spotOnly$instrument == "CORNMFACNC-C1")] = "601 S Main St
 spotOnly$address[which(spotOnly$instrument == "CORNMFALMR-C1")] = "1901 Hwy Kk, 64759"
 # Charleston Consolidated Grain and Barge
 spotOnly$address[which(spotOnly$instrument == "CORNCGBCHO-C1")] = "6720 N Hwy K, 63834"
-
+# Burlington Junction MFA
+spotOnly$address[which(spotOnly$instrument == "CORNMFABRL-C1")] = "1101 W Main St, 64428"
 
 # # Template for fixing addresses
 # # 
 # spotOnly$address[which(spotOnly$instrument == "-C1")] = ""
 
-
-
-
 # Get zip codes
 spotOnly$zipCode = str_extract(spotOnly$phoneNumber, "\\d{5}")
 
+# Fix Carrolton  zip code
+spotOnly$zipCode[which(spotOnly$instrument == "CORNRCGCAR2-C1")] = "64633"
+
 # Paste zip codes to address to send to geocoder
 spotOnly$geoFormatAddress = paste(spotOnly$address, spotOnly$zipCode, sep = ", ")
-
-# Get lat/lon from geocoder OSM
-x = data.frame(geocode_OSM(spotOnly$geoFormatAddress))
-
-x = x[, c("query", "lat", "lon")]
-
-colnames(x) = c("address", "lat", "long")
-
-# # Get lat/lon from geocoder GOOGLE
-# geocode(spotOnly$geoFormatAddress)
-
 
 # min lat = 35
 # max lat = 41
 # max long = -96
 # min long = -89
 
-
-noGeo = which(!spotOnly$geoFormatAddress %in% x$address)
-badGeo = which(!((x$lat >= 35 & x$lat <= 41) | (x$long >= -96 & x$long <= -89)))
-
-x = x[-badGeo, ]
-
-# Get rows that didn't geocode
-notWorking = spotOnly[c(noGeo, badGeo), ]
-
-# Load Google geocoded data
-moreMatches = read_csv("Basis/refinitivData/moreMatches.csv", 
-         col_types = cols(X1 = col_skip()))
-
-
-finalSet = rbind(x, moreMatches)
-
-
-finalSet = merge(finalSet, 
-                 spotOnly[, c("basis", "date", "terminalName", "county", "cropType", "geoFormatAddress")], 
-                 by.x = "address", 
-                 by.y = "geoFormatAddress")
+allGoogle = readRDS("Basis/refinitivData/allGoogle.rds")
 
 
 
-finalSet = merge(spotOnly[, c("basis", "date", "terminalName", "county", "cropType", "geoFormatAddress")],
+# # Get rows that didn't geocode
+# notWorking = spotOnly[c(noGeo, badGeo), ]
+
+finalSet = merge(spotOnly[, c("instrument", "basis", "date", "terminalName", "county", "cropType", "geoFormatAddress")],
                  allGoogle,
                  by.x = "geoFormatAddress",
                  by.y = "address")
 
+# Fix Brunswick Ray Carroll lat/long
+finalSet[which(finalSet$instrument == "CORNRCGBRU-C1"), c("lat", "long")] = c(39.430464, -93.147535)
+# Fix Laredo MFA lat/long
+finalSet[which(finalSet$instrument == "CORNMFALRD-C1"), c("lat", "long")] = c(40.026754, -93.444296)
+# Fix Burlington Junction MFA lat/long
+finalSet[which(finalSet$instrument == "CORNMFABRL-C1"), c("lat", "long")] = c(40.445430, -95.077368)
+# Fix Carrolton lat/long
+finalSet[which(finalSet$instrument == "CORNRCGCAR2-C1"), c("lat", "long")] = c(39.313495, -93.376687)
 
 
-
+# badGeo = which(!((allGoogle$lat >= 35 & allGoogle$lat <= 41) | (allGoogle$long >= -96 & allGoogle$long <= -89)))
+# 
+# x = x[-badGeo, ]
 
 
 library(rspatial)
@@ -171,7 +157,8 @@ rownames(finalSet) <- NULL
 xy = finalSet[ , c("long", "lat")]
 
 # convert basis data to spatial points data frame
-basisSP = SpatialPointsDataFrame(coords = xy, data = data.frame("basis" = finalSet[,"basis"], "county" = finalSet[,"county"]),
+basisSP = SpatialPointsDataFrame(coords = xy, data = data.frame("basis" = finalSet[,"basis"], "City" = finalSet[,"county"], 
+                                                                "Terminal" = finalSet[,"terminalName"]),
                                  proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
 
 
