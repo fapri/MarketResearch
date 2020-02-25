@@ -1,6 +1,6 @@
 library(ggmap)
 
-register_google(key = "AIzaSyB93jX1hpjRAf99FBE8ElvVMBsTT14lpYA")
+register_google(key = "UGH")
 
 
 results <- data.frame(address=character(),
