@@ -134,9 +134,10 @@ finalSet = merge(finalSet,
 
 
 
-
-
-
+finalSet = merge(spotOnly[, c("basis", "date", "terminalName", "county", "cropType", "geoFormatAddress")],
+                 allGoogle,
+                 by.x = "geoFormatAddress",
+                 by.y = "address")
 
 
 
@@ -290,24 +291,3 @@ mean(rmse)
 1 - (mean(rmse) / null)
 
 gs2 <- gstat(formula = basis ~ 1, locations = basisSP, nmax = 1, set = list(idp = 1))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
