@@ -1,6 +1,6 @@
 library(ggmap)
 
-register_google(key = "AIzaSyDc2iCQbl7evj8fah3v_phnkwcJQnYoPCQ")
+register_google(key = "AIzaSyB93jX1hpjRAf99FBE8ElvVMBsTT14lpYA")
 
 
 results <- data.frame(address=character(),
@@ -8,9 +8,9 @@ results <- data.frame(address=character(),
                  long=double(), 
                  stringsAsFactors=FALSE) 
 
-for (row in 1:nrow(notWorking)) {
-  if(row != 24) {
-    address = toString(notWorking[row, "geoFormatAddress"])
+for (row in 1:nrow(spotOnly)) {
+  if(row != 72) {
+    address = toString(spotOnly[row, "geoFormatAddress"])
     
     geo_reply = geocode(address, output='all', messaging=TRUE, override_limit=TRUE)
     
@@ -20,4 +20,4 @@ for (row in 1:nrow(notWorking)) {
   }
 }
 
-saveRDS(results, "moreMatches.rds")
+saveRDS(results, "allGoogle.rds")
