@@ -15,7 +15,7 @@ library(gstat)
 library(tmap)
 library(tmaptools)
 
-source("Basis/IDW/cleanCorn.R")
+source("Basis/IDW/dataCleaningFunctions.R")
 
 # Load data
 allBasis = read_csv("Basis/refinitivData/allBasis.csv")
@@ -124,10 +124,11 @@ mean(rmse)
 
 ## Nearest neighbour interpolation considering multiple (5) neighbours
 
-gs <- gstat(formula = basis~1, locations = basisSP, nmax = 5, set = list(idp = 0))
+gs <- gstat(formula = basis ~ 1, locations = basisSP, nmax = 5, set = list(idp = 0))
+
 nn <- interpolate(r, gs)
 nnmsk <- mask(nn, vr)
-# plot(nnmsk)
+plot(nnmsk)
 
 rmsenn = 0
 
@@ -145,8 +146,40 @@ mean(rmsenn)
 ## "inverse distance weighted" interpolation
 ## IDW = points that are further away get less weight in predicting a value a location.
 
-gs <- gstat(formula = basis ~ 1, locations = basisSP)
-idw <- interpolate(r, gs, idp = 1)
+# Cross validation function
+f1 <- function(x, test, train) {
+  nmx <- x[1]
+  idp <- x[2]
+  if (nmx < 1) return(Inf)
+  if (idp < .001) return(Inf)
+  m <- gstat(formula = basis ~ 1, locations = train, nmax = nmx, set = list(idp = idp))
+  p <- predict(m, newdata = test, debug.level = 0)$var1.pred
+  RMSE(test$basis, p)
+}
+
+set.seed(5586)
+i <- sample(nrow(basisSP), 0.2 * nrow(basisSP))
+tst <- basisSP[i,]
+trn <- basisSP[-i,]
+
+myRmse = data.frame()
+for (nmax in 2:20) {
+  for (pwr in seq(from = 0.5, to = 4, by = 0.1)) {
+    myRmse = rbind(myRmse, data.frame("nmax" = nmax, "pwr" = pwr, "rmse" = f1(c(nmax, pwr), tst, trn)))
+  }
+}
+
+# ggplot(myRmse) + geom_point(aes(x = pwr, y = rmse, col = as.factor(nmax)))
+
+# nmax = 12
+# pwr = 0.70
+
+optRmseRow = which(myRmse$rmse == min(myRmse$rmse))
+optNmax = myRmse$nmax[optRmseRow]
+optPwr = myRmse$pwr[optRmseRow]
+
+gs <- gstat(formula = basis ~ 1, locations = basisSP, nmax = 11, set = list(idp = 3))
+idw <- interpolate(r, gs, idp = 3)
 idwr <- mask(idw, vr)
 # plot(idwr)
 
@@ -172,67 +205,3 @@ for (k in 1:5) {
 rmse
 mean(rmse)
 1 - (mean(rmse) / null)
-
-gs2 <- gstat(formula = basis ~ 1, locations = basisSP, nmax = 1, set = list(idp = 1))
-
-
-
-
-# x = c(8, .5)
-
-f1 <- function(x, test, train) {
-  nmx <- x[1]
-  idp <- x[2]
-  if (nmx < 1) return(Inf)
-  if (idp < .001) return(Inf)
-  m <- gstat(formula=basis~1, locations=train, nmax=nmx, set=list(idp=idp))
-  p <- predict(m, newdata=test, debug.level=0)$var1.pred
-  RMSE(test$basis, p)
-}
-
-library(optimx)
-
-set.seed(20150518)
-i <- sample(nrow(basisSP), 0.2 * nrow(basisSP))
-tst <- basisSP[i,]
-trn <- basisSP[-i,]
-
-
-myRmse = data.frame()
-for (nmax in 2:20) {
-  for (pwr in seq(from = 0.5, to = 3, by = 0.1)) {
-    myRmse = rbind(myRmse, data.frame("nmax" = nmax, "pwr" = pwr, "rmse" = f1(c(nmax, pwr), tst, trn)))
-  }
-}
-
-ggplotly(ggplot(myRmse) + geom_point(aes(x = pwr, y = rmse, col = as.factor(nmax))))
-
-# nmax = 12
-# pwr = 0.70
-
-optRmseRow = which(myRmse$rmse == min(myRmse$rmse))
-optNmax = myRmse$nmax[optRmseRow]
-optPwr = myRmse$pwr[optRmseRow]
-
-m <- gstat(formula = basis ~ 1, locations = basisSP, nmax = optNmax, set = list(idp = optPwr))
-idw <- interpolate(r, m)
-## [inverse distance weighted interpolation]
-idw <- mask(idw, Missouri)
-# plot(idw)
-
-
-
-tm_shape(idw) +
-  tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.2, 1), midpoint = midPoint,
-            title = "", legend.reverse = TRUE) +
-  tm_shape(basisSP) + tm_dots(size = 0.1) +
-  tm_legend(legend.outside = TRUE) +
-  tm_layout(title = "Basis (cents)", main.title = "Missouri Basis")
-
-
-
-
-
-
-
-
