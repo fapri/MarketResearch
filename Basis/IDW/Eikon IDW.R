@@ -18,8 +18,8 @@ library(tmaptools)
 source("Basis/IDW/dataCleaningFunctions.R")
 
 # Load data
-allBasis = read_csv("Basis/refinitivData/allBasis.csv")
-spotOnly = read_csv("Basis/refinitivData/spotOnly.csv")
+allBasis = read_csv("Basis/refinitivData/cornAllBasis02202020.csv")
+spotOnly = read_csv("Basis/refinitivData/cornSpotOnly02202020.csv")
 
 # Remove extra columns
 spotOnly = subset(spotOnly, select = -c(GEN_TEXT16, Location))
