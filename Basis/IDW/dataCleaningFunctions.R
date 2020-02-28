@@ -1,5 +1,5 @@
 # Cleaning Eikon Data 
-# Corn
+# Functions for manually editing data
 
 
 cleanCorn1 = function() {
