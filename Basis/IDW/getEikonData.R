@@ -23,3 +23,50 @@ spotOnly = allBasis[which(grepl("SPOT", allBasis$CF_NAME) == TRUE), ]
 
 # saveRDS(spotOnly, file = "/Users/ensxvd/Desktop/spotOnly.rds")
 # saveRDS(allBasis, file = "/Users/ensxvd/Desktop/allBasis.rds")
+
+
+
+
+
+########################################################################
+# Compare Corn and soybean addresses
+########################################################################
+
+# cornSpotOnly = read_csv("Basis/refinitivData/cornSpotOnly02282020.csv")
+# # Remove extra columns
+# cornSpotOnly = subset(cornSpotOnly, select = -c(GEN_TEXT16, Location))
+# # Change column names
+# colnames(cornSpotOnly) = c("instrument", "contractName", "basis", "date", "terminalName", "address", "county", "cropType", "phoneNumber")
+# # Get zip codes
+# cornSpotOnly$zipCode = str_extract(cornSpotOnly$phoneNumber, "\\d{5}")
+# # Paste zip codes to address to send to geocoder
+# cornSpotOnly$geoFormatAddress = paste(cornSpotOnly$address, cornSpotOnly$zipCode, sep = ", ")
+# 
+# soybeanSpotOnly = read_csv("Basis/refinitivData/soybeanSpotOnly02282020.csv")
+# # Remove extra columns
+# soybeanSpotOnly = subset(soybeanSpotOnly, select = -c(GEN_TEXT16, Location))
+# # Change column names
+# colnames(soybeanSpotOnly) = c("instrument", "contractName", "basis", "date", "terminalName", "address", "county", "cropType", "phoneNumber")
+# # Get zip codes
+# soybeanSpotOnly$zipCode = str_extract(soybeanSpotOnly$phoneNumber, "\\d{5}")
+# # Paste zip codes to address to send to geocoder
+# soybeanSpotOnly$geoFormatAddress = paste(soybeanSpotOnly$address, soybeanSpotOnly$zipCode, sep = ", ")
+# 
+# 
+# # Get important information
+# cornSubset = cornSpotOnly[, c("instrument", "geoFormatAddress")]
+# 
+# # # Confirm that soybean terminal names are the same as corn
+# # soybeanSubset = soybeanSpotOnly
+# # soybeanSubset = gsub('SOYB', 'CORN', soybeanSubset$instrument)
+# # checkAddress = merge(x = soybeanSubset, y = cornSubset, by = c("geoFormatAddress", "instrument"), all.x = TRUE)
+# 
+# # Merge the sets by address (before being cleaned)
+# # All addresses matched up to corn, meaning that the 
+# # errors we saw in corn are consistent with soybeans
+# checkAddress = merge(x = soybeanSpotOnly, y = cornSubset, by = c("geoFormatAddress"), all.y = TRUE)
+# 
+# # Get the instruments which do not carry from corn and 
+# # ensure they are not in cleaning functions
+# notInSoybeans = which(is.na(checkAddress$instrument.x))
+# checkAddress$instrument.y[notInSoybeans]

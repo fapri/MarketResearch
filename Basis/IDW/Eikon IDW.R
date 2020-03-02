@@ -18,8 +18,10 @@ library(tmaptools)
 source("Basis/IDW/dataCleaningFunctions.R")
 
 # Load data
-allBasis = read_csv("Basis/refinitivData/cornAllBasis02202020.csv")
-spotOnly = read_csv("Basis/refinitivData/cornSpotOnly02202020.csv")
+allBasis = read_csv("Basis/refinitivData/cornAllBasis02282020.csv")
+spotOnly = read_csv("Basis/refinitivData/cornSpotOnly02282020.csv")
+# allBasis = read_csv("Basis/refinitivData/soybeanAllBasis02282020.csv")
+# spotOnly = read_csv("Basis/refinitivData/soybeanSpotOnly02282020.csv")
 
 # Remove extra columns
 spotOnly = subset(spotOnly, select = -c(GEN_TEXT16, Location))
@@ -29,6 +31,7 @@ colnames(spotOnly) = c("instrument", "contractName", "basis", "date", "terminalN
 
 # Initial Clean
 spotOnly = cleanCorn1()
+# spotOnly = cleanSoybean1()
 
 # Get zip codes
 spotOnly$zipCode = str_extract(spotOnly$phoneNumber, "\\d{5}")
@@ -41,9 +44,9 @@ spotOnly$geoFormatAddress = paste(spotOnly$address, spotOnly$zipCode, sep = ", "
 # max long = -96
 # min long = -89
 
-allGoogle = readRDS("Basis/refinitivData/allGoogle.rds")
+allGoogle = read.csv("Basis/refinitivData/allGoogle.csv")
 
-badGeo = which(!((allGoogle$lat >= 35 & allGoogle$lat <= 41) | (allGoogle$long >= -96 & allGoogle$long <= -89)))
+# badGeo = which(!((allGoogle$lat >= 35 & allGoogle$lat <= 41) | (allGoogle$long >= -96 & allGoogle$long <= -89)))
 
 finalSet = merge(spotOnly[, c("instrument", "basis", "date", "terminalName", "county", "cropType", "geoFormatAddress")],
                  allGoogle,
@@ -51,6 +54,22 @@ finalSet = merge(spotOnly[, c("instrument", "basis", "date", "terminalName", "co
                  by.y = "address")
 
 finalSet = cleanCorn2()
+# finalSet = cleanSoybean2()
+
+
+which(!(spotOnly$instrument %in% finalSet$instrument))
+
+
+# write.csv(data.frame(spotOnly$geoFormatAddress[which(!(spotOnly$instrument %in% finalSet$instrument))]), 
+# "Basis/refinitivData/needGeo.csv", row.names = F)
+
+
+
+
+
+
+
+
 
 # Remove NA values
 finalSet = finalSet[!is.na(finalSet[, c("basis")]), ]
@@ -205,3 +224,6 @@ for (k in 1:5) {
 rmse
 mean(rmse)
 1 - (mean(rmse) / null)
+
+
+
