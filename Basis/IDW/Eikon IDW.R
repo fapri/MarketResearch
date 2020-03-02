@@ -56,21 +56,6 @@ finalSet = merge(spotOnly[, c("instrument", "basis", "date", "terminalName", "co
 finalSet = cleanCorn2()
 # finalSet = cleanSoybean2()
 
-
-which(!(spotOnly$instrument %in% finalSet$instrument))
-
-
-# write.csv(data.frame(spotOnly$geoFormatAddress[which(!(spotOnly$instrument %in% finalSet$instrument))]), 
-# "Basis/refinitivData/needGeo.csv", row.names = F)
-
-
-
-
-
-
-
-
-
 # Remove NA values
 finalSet = finalSet[!is.na(finalSet[, c("basis")]), ]
 
@@ -82,8 +67,18 @@ rownames(finalSet) <- NULL
 # Get longitude and laitude (must be in that order)
 xy = finalSet[ , c("long", "lat")]
 
+
+melvinsLocations = read_csv("Basis/refinitivData/melvinsLocations.csv")
+specialSet = finalSet[which(finalSet$terminalName %in% melvinsLocations$terminalName), ]
+
+
+
 # convert basis data to spatial points data frame
 basisSP = SpatialPointsDataFrame(coords = xy, data = data.frame("basis" = finalSet[,"basis"], "City" = finalSet[,"county"], 
+                                                                "Terminal" = finalSet[,"terminalName"]),
+                                 proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
+
+specialI = SpatialPointsDataFrame(coords = xy, data = data.frame("basis" = finalSet[,"basis"], "City" = finalSet[,"county"], 
                                                                 "Terminal" = finalSet[,"terminalName"]),
                                  proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
 
@@ -100,6 +95,9 @@ MO <- readOGR(dsn = "Basis/MissouriCountyBoundariesMap/geo_export_6b1e41b0-3ffc-
 USAC <- CRS("+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
 
 basisSP <- spTransform(basisSP, USAC)
+
+special = spTransform(special, USAC)
+
 Missouri <- spTransform(MO, USAC)
 
 RMSE <- function(observed, predicted) {
@@ -210,6 +208,9 @@ tm_shape(idwr) +
   tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = midPoint,
             title = "", legend.reverse = TRUE) + 
   tm_shape(basisSP) + tm_dots(size = 0.1) +
+  
+  tm_shape(special) + tm_dots(size = 0.1) +
+  
   tm_legend(legend.outside = TRUE) + 
   tm_layout(title = "Basis (cents)", main.title = "Missouri Basis")
 
