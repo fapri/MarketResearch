@@ -69,19 +69,13 @@ xy = finalSet[ , c("long", "lat")]
 
 
 melvinsLocations = read_csv("Basis/refinitivData/melvinsLocations.csv")
-specialSet = finalSet[which(finalSet$terminalName %in% melvinsLocations$terminalName), ]
-
-
+finalSet$special = "notSpecial"
+finalSet$special[which(finalSet$terminalName %in% melvinsLocations$terminalName)] = "special"
 
 # convert basis data to spatial points data frame
 basisSP = SpatialPointsDataFrame(coords = xy, data = data.frame("basis" = finalSet[,"basis"], "City" = finalSet[,"county"], 
-                                                                "Terminal" = finalSet[,"terminalName"]),
+                                                                "Terminal" = finalSet[,"terminalName"], "Special" = finalSet["special"]),
                                  proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
-
-specialI = SpatialPointsDataFrame(coords = xy, data = data.frame("basis" = finalSet[,"basis"], "City" = finalSet[,"county"], 
-                                                                "Terminal" = finalSet[,"terminalName"]),
-                                 proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
-
 
 
 MO <- readOGR(dsn = "Basis/MissouriCountyBoundariesMap/geo_export_6b1e41b0-3ffc-4779-b905-b6c2702c930a.shp")
@@ -95,8 +89,6 @@ MO <- readOGR(dsn = "Basis/MissouriCountyBoundariesMap/geo_export_6b1e41b0-3ffc-
 USAC <- CRS("+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
 
 basisSP <- spTransform(basisSP, USAC)
-
-special = spTransform(special, USAC)
 
 Missouri <- spTransform(MO, USAC)
 
@@ -207,9 +199,9 @@ idwr <- mask(idw, vr)
 tm_shape(idwr) + 
   tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = midPoint,
             title = "", legend.reverse = TRUE) + 
-  tm_shape(basisSP) + tm_dots(size = 0.1) +
-  
-  tm_shape(special) + tm_dots(size = 0.1) +
+  tm_shape(basisSP) + 
+  tm_dots(size = 0.1, col = "special", palette = c(special = 'lightgray', notSpecial = 'black'), 
+          style = "cat", popup.vars = c("City" = "City", "Terminal" = "Terminal"), legend.show = FALSE) +
   
   tm_legend(legend.outside = TRUE) + 
   tm_layout(title = "Basis (cents)", main.title = "Missouri Basis")

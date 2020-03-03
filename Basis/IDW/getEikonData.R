@@ -62,11 +62,11 @@ spotOnly = allBasis[which(grepl("SPOT", allBasis$CF_NAME) == TRUE), ]
 # # checkAddress = merge(x = soybeanSubset, y = cornSubset, by = c("geoFormatAddress", "instrument"), all.x = TRUE)
 # 
 # # Merge the sets by address (before being cleaned)
-# # All addresses matched up to corn, meaning that the 
+# # All addresses matched up to corn, meaning that the
 # # errors we saw in corn are consistent with soybeans
 # checkAddress = merge(x = soybeanSpotOnly, y = cornSubset, by = c("geoFormatAddress"), all.y = TRUE)
 # 
-# # Get the instruments which do not carry from corn and 
+# # Get the instruments which do not carry from corn and
 # # ensure they are not in cleaning functions
 # notInSoybeans = which(is.na(checkAddress$instrument.x))
 # checkAddress$instrument.y[notInSoybeans]
