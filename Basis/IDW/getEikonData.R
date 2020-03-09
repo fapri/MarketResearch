@@ -21,12 +21,53 @@ for (i in 1:nrow(locations)) {
 
 spotOnly = allBasis[which(grepl("SPOT", allBasis$CF_NAME) == TRUE), ]
 
-write.csv(spotOnly, 
-          file = paste("/Users/ensxvd/Desktop/refinitivData/", "cornSpotOnly", format(Sys.Date(), "%Y%m%d"), ".csv", sep = ""), 
-          row.names = FALSE)
-write.csv(allBasis, 
-          file = paste("/Users/ensxvd/Desktop/refinitivData/", "cornAllBasis", format(Sys.Date(), "%Y%m%d"), ".csv", sep = ""), 
-          row.names = FALSE)
+# write.csv(spotOnly, 
+#           file = paste("/Users/ensxvd/Desktop/refinitivData/", "cornSpotOnly", format(Sys.Date(), "%Y%m%d"), ".csv", sep = ""), 
+#           row.names = FALSE)
+# write.csv(allBasis, 
+#           file = paste("/Users/ensxvd/Desktop/refinitivData/", "cornAllBasis", format(Sys.Date(), "%Y%m%d"), ".csv", sep = ""), 
+#           row.names = FALSE)
+
+
+
+
+
+spotOnly$Instrument = as.character(spotOnly$Instrument)
+
+# October
+oct = data.frame()
+
+for (i in 1:nrow(spotOnly)) {
+  oct = rbind(oct, cbind("Instrument" = spotOnly$Instrument[i], "octAvg" = mean(as.numeric(get_timeseries(spotOnly$Instrument[i],
+                                                                                                          list("*"),
+                                                                                                          start_date = "2019-10-01T15:04:05",
+                                                                                                          end_date = "2019-10-31T15:04:05")$VALUE), na.rm = TRUE)))
+  print(i)
+}
+
+oct$Instrument = as.character(oct$Instrument)
+oct$octAvg = as.numeric(levels(oct$octAvg))[oct$octAvg]
+
+# January
+jan = data.frame()
+
+for (i in 1:nrow(spotOnly)) {
+  jan = rbind(jan, cbind("Instrument" = spotOnly$Instrument[i], "janAvg" = mean(as.numeric(get_timeseries(spotOnly$Instrument[i],
+                                                                                                          list("*"),
+                                                                                                          start_date = "2020-01-01T15:04:05",
+                                                                                                          end_date = "2020-01-31T15:04:05")$VALUE), na.rm = TRUE)))
+  print(i)
+}
+
+jan$Instrument = as.character(jan$Instrument)
+jan$janAvg = as.numeric(levels(jan$janAvg))[jan$janAvg]
+
+
+# Merge Oct and Jan to existing data
+spotOnly = merge(x = spotOnly, y = oct, by = "Instrument", all.x = TRUE)
+spotOnly = merge(x = spotOnly, y = jan, by = "Instrument", all.x = TRUE)
+
+# write.csv(spotOnly, file = "/Users/ensxvd/Desktop/cornSpotJanOct.csv", row.names = FALSE)
 
 
 
@@ -60,12 +101,12 @@ for (i in 1:nrow(locations)) {
 
 spotOnly = allBasis[which(grepl("SPOT", allBasis$CF_NAME) == TRUE), ]
 
-write.csv(spotOnly, 
-          file = paste("/Users/ensxvd/Desktop/refinitivData/", "soybeanSpotOnly", format(Sys.Date(), "%Y%m%d"), ".csv", sep = ""), 
-          row.names = FALSE)
-write.csv(allBasis, 
-          file = paste("/Users/ensxvd/Desktop/refinitivData/", "soybeanAllBasis", format(Sys.Date(), "%Y%m%d"), ".csv", sep = ""), 
-          row.names = FALSE)
+# write.csv(spotOnly, 
+#           file = paste("/Users/ensxvd/Desktop/refinitivData/", "soybeanSpotOnly", format(Sys.Date(), "%Y%m%d"), ".csv", sep = ""), 
+#           row.names = FALSE)
+# write.csv(allBasis, 
+#           file = paste("/Users/ensxvd/Desktop/refinitivData/", "soybeanAllBasis", format(Sys.Date(), "%Y%m%d"), ".csv", sep = ""), 
+#           row.names = FALSE)
 
 
 
@@ -111,7 +152,7 @@ jan$janAvg = as.numeric(levels(jan$janAvg))[jan$janAvg]
 spotOnly = merge(x = spotOnly, y = oct, by = "Instrument", all.x = TRUE)
 spotOnly = merge(x = spotOnly, y = jan, by = "Instrument", all.x = TRUE)
 
-# write.csv(spotOnly, file = "/Users/ensxvd/Desktop/spotJanOct.csv", row.names = FALSE)
+# write.csv(spotOnly, file = "/Users/ensxvd/Desktop/soybeanSpotJanOct.csv", row.names = FALSE)
 
 
 
