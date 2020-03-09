@@ -20,18 +20,32 @@ source("Basis/IDW/dataCleaningFunctions.R")
 # Load data
 # allBasis = read_csv("Basis/refinitivData/cornAllBasis20200228.csv")
 # spotOnly = read_csv("Basis/refinitivData/cornSpotOnly20200228.csv")
-allBasis = read_csv("Basis/refinitivData/soybeanAllBasis20200228.csv")
-spotOnly = read_csv("Basis/refinitivData/soybeanSpotOnly20200228.csv")
+spotOnly = read_csv("Basis/refinitivData/cornSpotJanOct.csv")
+# allBasis = read_csv("Basis/refinitivData/soybeanAllBasis20200228.csv")
+# spotOnly = read_csv("Basis/refinitivData/soybeanSpotOnly20200228.csv")
+# spotOnly = read_csv("Basis/refinitivData/soybeanSpotJanOct.csv")
 
 # Remove extra columns
 spotOnly = subset(spotOnly, select = -c(GEN_TEXT16, Location))
+
+# # Get october averages
+# if ("octAvg" %in% colnames(spotOnly)) {
+#   spotOnly$CF_BID = spotOnly$octAvg
+#   spotOnly = spotOnly[ , -which(names(spotOnly) %in% c("octAvg", "janAvg"))]
+# }
+
+# Get january averages
+if ("janAvg" %in% colnames(spotOnly)) {
+  spotOnly$CF_BID = spotOnly$janAvg
+  spotOnly = spotOnly[ , -which(names(spotOnly) %in% c("octAvg", "janAvg"))]
+}
 
 # Change column names
 colnames(spotOnly) = c("instrument", "contractName", "basis", "date", "terminalName", "address", "county", "cropType", "phoneNumber")
 
 # Initial Clean
-# spotOnly = cleanCorn1()
-spotOnly = cleanSoybean1()
+spotOnly = cleanCorn1()
+# spotOnly = cleanSoybean1()
 
 # Get zip codes
 spotOnly$zipCode = str_extract(spotOnly$phoneNumber, "\\d{5}")
@@ -53,8 +67,8 @@ finalSet = merge(spotOnly[, c("instrument", "basis", "date", "terminalName", "co
                  by.x = "geoFormatAddress",
                  by.y = "address")
 
-# finalSet = cleanCorn2()
-finalSet = cleanSoybean2()
+finalSet = cleanCorn2()
+# finalSet = cleanSoybean2()
 
 # Remove NA values
 finalSet = finalSet[!is.na(finalSet[, c("basis")]), ]
@@ -196,10 +210,16 @@ idwr <- mask(idw, vr)
 # tmap_mode("plot")
 # tmaptools::palette_explorer() 
 
-tm_shape(idwr) + 
-  tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = midPoint,
+
+# Code to save the idw objects for plotting
+# cornJanIDW = list("idwr" = idwr, "basisSP" = basisSP, "midPoint" = midPoint)
+# saveRDS(cornJanIDW, file = "Basis/IDW/cornJanIDW.rds")
+
+
+tm_shape(soybeanJanIDW[["idwr"]]) + 
+  tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = soybeanJanIDW[["midPoint"]],
             title = "", legend.reverse = TRUE) + 
-  tm_shape(basisSP) + 
+  tm_shape(soybeanJanIDW[["basisSP"]]) + 
   tm_dots(size = 0.1, col = "black", popup.vars = c("City" = "City", "Terminal" = "Terminal")) +
   # tm_dots(size = 0.1, col = "special", palette = c(notSpecial = 'black', special = '#33CC33'), border.col = "black",
   #         style = "cat", popup.vars = c("City" = "City", "Terminal" = "Terminal"), legend.show = FALSE) +
@@ -210,10 +230,46 @@ tm_shape(idwr) +
   #   title = "Terminal Type"
   # ) +
   tm_legend(legend.outside = TRUE) + 
-  tm_layout(title = "Basis (cents)", main.title = "Missouri Basis")
+  tm_layout(title = "Average Basis (cents) for Soybeans: January 2020", title.size = 50, main.title = "Missouri Basis")
+  
   
 
-# soybeans20200228withTerminals
+
+
+
+# Plot two maps in one
+tm_shape(soybeanOctIDW[["idwr"]]) + 
+  tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = soybeanOctIDW[["midPoint"]],
+            title = "", legend.reverse = TRUE) + 
+  tm_shape(soybeanOctIDW[["basisSP"]]) + 
+  tm_dots(size = 0.1, col = "black", popup.vars = c("City" = "City", "Terminal" = "Terminal")) +
+  # tm_dots(size = 0.1, col = "special", palette = c(notSpecial = 'black', special = '#33CC33'), border.col = "black",
+  #         style = "cat", popup.vars = c("City" = "City", "Terminal" = "Terminal"), legend.show = FALSE) +
+  # tm_add_legend(
+  #   type = "fill",
+  #   col = c('#33CC33', 'black'),
+  #   labels = c("Main Terminals", "Other"),
+  #   title = "Terminal Type"
+  # ) +
+  tm_legend(legend.outside = TRUE) + 
+  
+  tm_shape(soybeanJanIDW[["idwr"]]) + 
+  tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = soybeanJanIDW[["midPoint"]],
+            title = "", legend.reverse = TRUE) + 
+  tm_shape(soybeanJanIDW[["basisSP"]]) + 
+  tm_dots(size = 0.1, col = "black", popup.vars = c("City" = "City", "Terminal" = "Terminal")) +
+  # tm_dots(size = 0.1, col = "special", palette = c(notSpecial = 'black', special = '#33CC33'), border.col = "black",
+  #         style = "cat", popup.vars = c("City" = "City", "Terminal" = "Terminal"), legend.show = FALSE) +
+  # tm_add_legend(
+  #   type = "fill",
+  #   col = c('#33CC33', 'black'),
+  #   labels = c("Main Terminals", "Other"),
+  #   title = "Terminal Type"
+  # ) +
+  tm_legend(legend.outside = TRUE) +
+  tm_facets(as.layers = TRUE)
+
+
 
 rmse <- rep(NA, 5)
 for (k in 1:5) {
