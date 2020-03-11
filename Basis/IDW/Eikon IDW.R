@@ -216,10 +216,10 @@ idwr <- mask(idw, vr)
 # saveRDS(cornJanIDW, file = "Basis/IDW/cornJanIDW.rds")
 
 
-tm_shape(soybeanJanIDW[["idwr"]]) + 
-  tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = soybeanJanIDW[["midPoint"]],
+tm_shape(cornJanIDW[["idwr"]]) + 
+  tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = cornJanIDW[["midPoint"]],
             title = "", legend.reverse = TRUE) + 
-  tm_shape(soybeanJanIDW[["basisSP"]]) + 
+  tm_shape(cornJanIDW[["basisSP"]]) + 
   tm_dots(size = 0.1, col = "black", popup.vars = c("City" = "City", "Terminal" = "Terminal")) +
   # tm_dots(size = 0.1, col = "special", palette = c(notSpecial = 'black', special = '#33CC33'), border.col = "black",
   #         style = "cat", popup.vars = c("City" = "City", "Terminal" = "Terminal"), legend.show = FALSE) +
@@ -234,15 +234,32 @@ tm_shape(soybeanJanIDW[["idwr"]]) +
   
   
 
+library(leaflet)
+
+
+
+leaflet() %>% addTiles() %>%
+  addRasterImage(soybeanOctIDW[["idwr"]], opacity = 1, colors = "RdYlBu") %>%
+  # addCircleMarkers(
+  #   data = soybeanOctIDW[["basisSP"]],
+  #   color = "black",
+  #   stroke = FALSE, 
+  #   fillOpacity = 0.5
+  # )
+  addMarkers(
+    data = soybeanOctIDW[["basisSP"]],
+    ~lon, ~lat)
+
+
 
 
 
 # Plot two maps in one
-tm_shape(soybeanOctIDW[["idwr"]]) + 
+tm = tm_shape(soybeanOctIDW[["idwr"]]) + 
   tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = soybeanOctIDW[["midPoint"]],
-            title = "", legend.reverse = TRUE) + 
+            title = "", legend.reverse = TRUE, group = "oct") + 
   tm_shape(soybeanOctIDW[["basisSP"]]) + 
-  tm_dots(size = 0.1, col = "black", popup.vars = c("City" = "City", "Terminal" = "Terminal")) +
+  tm_dots(size = 0.1, col = "black", popup.vars = c("City" = "City", "Terminal" = "Terminal"), group = "oct") +
   # tm_dots(size = 0.1, col = "special", palette = c(notSpecial = 'black', special = '#33CC33'), border.col = "black",
   #         style = "cat", popup.vars = c("City" = "City", "Terminal" = "Terminal"), legend.show = FALSE) +
   # tm_add_legend(
@@ -255,9 +272,9 @@ tm_shape(soybeanOctIDW[["idwr"]]) +
   
   tm_shape(soybeanJanIDW[["idwr"]]) + 
   tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = soybeanJanIDW[["midPoint"]],
-            title = "", legend.reverse = TRUE) + 
+            title = "", legend.reverse = TRUE, group = "test") + 
   tm_shape(soybeanJanIDW[["basisSP"]]) + 
-  tm_dots(size = 0.1, col = "black", popup.vars = c("City" = "City", "Terminal" = "Terminal")) +
+  tm_dots(size = 0.1, col = "black", popup.vars = c("City" = "City", "Terminal" = "Terminal"), group = "test") +
   # tm_dots(size = 0.1, col = "special", palette = c(notSpecial = 'black', special = '#33CC33'), border.col = "black",
   #         style = "cat", popup.vars = c("City" = "City", "Terminal" = "Terminal"), legend.show = FALSE) +
   # tm_add_legend(
@@ -266,9 +283,55 @@ tm_shape(soybeanOctIDW[["idwr"]]) +
   #   labels = c("Main Terminals", "Other"),
   #   title = "Terminal Type"
   # ) +
+  
+  
   tm_legend(legend.outside = TRUE) +
-  tm_facets(as.layers = TRUE)
+  tm_facets()
 
+
+tm %>%
+  tmap_leaflet() %>%
+  hideGroup("test")
+
+
+library(htmlwidgets)
+
+
+palOct <- colorNumeric(
+  palette = "YlGnBu",
+  domain = soybeanOctIDW[["basisSP"]]@data$basis
+)
+
+palTest <- colorNumeric(
+  palette = "YlGnBu",
+  domain = soybeanJanIDW[["basisSP"]]@data$basis
+)
+
+conpal <- colorNumeric(palette = "Blues", domain = soybeanOctIDW[["basisSP"]]@data$basis, na.color = "black")
+
+tm %>%
+  tmap_leaflet() %>%
+  hideGroup("test") %>%
+
+  addLayersControl(baseGroups = c("oct", "test"), 
+                   position = "topleft",
+                   options = layersControlOptions(collapsed = F)) %>%
+  onRender("
+    function(el, x) {
+      var updateLegend = function () {
+          var selectedGroup = document.querySelectorAll('input:checked')[0].nextSibling.innerText.substr(1);
+
+          document.querySelectorAll('.legend').forEach(a => a.hidden=true);
+          document.querySelectorAll('.legend').forEach(l => {
+            if (l.children[0].children[0].innerText == selectedGroup) l.hidden=false;
+          });
+      };
+      updateLegend();
+      this.on('baselayerchange', e => updateLegend());
+  
+  
+  
+    }")
 
 
 rmse <- rep(NA, 5)
