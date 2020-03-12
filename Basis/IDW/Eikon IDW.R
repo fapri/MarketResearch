@@ -318,32 +318,37 @@ tm %>%
                    position = "topleft",
                    options = layersControlOptions(collapsed = F)) %>%
   onRender("
+    var legends = document.querySelectorAll('.legend');
+    legends.forEach(a => a.hidden = true);
+    legends[0].hidden = false;
+    
+    console.log(legends);
   
-  var legends = document.querySelectorAll('.legend')
-  
-  legendsArray = {
+    legendsArray = {
               'oct': legends[0],
               'test': legends[1]
-              };
-  var currentLegend = legendsArray['oct'];        
+    };
+              
+    console.log(legendsArray);
 
-  
     function(el, x) {
       var updateLegend = function () {
+        document.querySelectorAll('.legend').forEach(a => a.hidden = true);
           
-    
-    if (el.name === 'test') {
-        
-    }
+        if(document.querySelectorAll('input:checked')[0].nextSibling.innerText.substr(1) === 'oct') {
+          legendsArray['oct'].hidden = false;
+        }
+        if (document.querySelectorAll('input:checked')[0].nextSibling.innerText.substr(1) === 'test') {
+            legendsArray['test'].hidden = false;
+        }
           
-          
-          
-  
       };
+      
       updateLegend();
       this.on('baselayerchange', e => updateLegend());
     }")
 
+# var currentLegend = legendsArray['oct'];        
 # if (l.innerText == selectedGroup) l.hidden=false;
 # var selectedGroup = document.querySelectorAll('input:checked')[0].nextSibling.innerText.substr(1);
 # document.querySelectorAll('.legend').forEach(a => a.hidden = true);
