@@ -285,8 +285,7 @@ tm = tm_shape(soybeanOctIDW[["idwr"]]) +
   # ) +
   
   
-  tm_legend(legend.outside = TRUE) +
-  tm_facets()
+  tm_legend(legend.outside = TRUE)
 
 
 tm %>%
@@ -309,30 +308,45 @@ palTest <- colorNumeric(
 
 conpal <- colorNumeric(palette = "Blues", domain = soybeanOctIDW[["basisSP"]]@data$basis, na.color = "black")
 
+# Grab all legends on render. assume they are in the correct order. assign then to variables to
+# be called later.
+
 tm %>%
   tmap_leaflet() %>%
-  hideGroup("test") %>%
-
+  
   addLayersControl(baseGroups = c("oct", "test"), 
                    position = "topleft",
                    options = layersControlOptions(collapsed = F)) %>%
   onRender("
+  
+  var legends = document.querySelectorAll('.legend')
+  
+  legendsArray = {
+              'oct': legends[0],
+              'test': legends[1]
+              };
+  var currentLegend = legendsArray['oct'];        
+
+  
     function(el, x) {
       var updateLegend = function () {
-          var selectedGroup = document.querySelectorAll('input:checked')[0].nextSibling.innerText.substr(1);
-
-          document.querySelectorAll('.legend').forEach(a => a.hidden=true);
-          document.querySelectorAll('.legend').forEach(l => {
-            if (l.children[0].children[0].innerText == selectedGroup) l.hidden=false;
-          });
+          
+    
+    if (el.name === 'test') {
+        
+    }
+          
+          
+          
+  
       };
       updateLegend();
       this.on('baselayerchange', e => updateLegend());
-  
-  
-  
     }")
 
+# if (l.innerText == selectedGroup) l.hidden=false;
+# var selectedGroup = document.querySelectorAll('input:checked')[0].nextSibling.innerText.substr(1);
+# document.querySelectorAll('.legend').forEach(a => a.hidden = true);
 
 rmse <- rep(NA, 5)
 for (k in 1:5) {
