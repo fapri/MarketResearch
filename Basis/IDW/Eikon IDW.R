@@ -14,6 +14,8 @@ library(deldir)
 library(gstat)
 library(tmap)
 library(tmaptools)
+library(leaflet)
+library(htmlwidgets)
 
 source("Basis/IDW/dataCleaningFunctions.R")
 
@@ -234,22 +236,6 @@ tm_shape(cornJanIDW[["idwr"]]) +
   
   
 
-library(leaflet)
-
-
-
-leaflet() %>% addTiles() %>%
-  addRasterImage(soybeanOctIDW[["idwr"]], opacity = 1, colors = "RdYlBu") %>%
-  # addCircleMarkers(
-  #   data = soybeanOctIDW[["basisSP"]],
-  #   color = "black",
-  #   stroke = FALSE, 
-  #   fillOpacity = 0.5
-  # )
-  addMarkers(
-    data = soybeanOctIDW[["basisSP"]],
-    ~lon, ~lat)
-
 
 
 
@@ -288,26 +274,6 @@ tm = tm_shape(soybeanOctIDW[["idwr"]]) +
   tm_legend(legend.outside = TRUE)
 
 
-tm %>%
-  tmap_leaflet() %>%
-  hideGroup("test")
-
-
-library(htmlwidgets)
-
-
-palOct <- colorNumeric(
-  palette = "YlGnBu",
-  domain = soybeanOctIDW[["basisSP"]]@data$basis
-)
-
-palTest <- colorNumeric(
-  palette = "YlGnBu",
-  domain = soybeanJanIDW[["basisSP"]]@data$basis
-)
-
-conpal <- colorNumeric(palette = "Blues", domain = soybeanOctIDW[["basisSP"]]@data$basis, na.color = "black")
-
 # Grab all legends on render. assume they are in the correct order. assign then to variables to
 # be called later.
 
@@ -318,36 +284,45 @@ tm %>%
                    position = "topleft",
                    options = layersControlOptions(collapsed = F)) %>%
   onRender("
-    var legends = document.querySelectorAll('.legend');
-    legends.forEach(a => a.hidden = true);
-    legends[0].hidden = false;
-    
-    console.log(legends);
-  
-    legendsArray = {
-              'oct': legends[0],
-              'test': legends[1]
-    };
-              
-    console.log(legendsArray);
-
     function(el, x) {
+      var legends = document.querySelectorAll('.legend');
+      
+      function hideAllLegends(item, index) {
+        item.hidden = true;
+        console.dir(item.hidden);
+      }
+      
+      legends.forEach(hideAllLegends);
+  
+      legends[0].hidden = false;
+    
+      legendsArray = {
+                'oct': legends[0],
+                'test': legends[1]
+      };
+                
+      console.log(legendsArray);
+    
       var updateLegend = function () {
-        document.querySelectorAll('.legend').forEach(a => a.hidden = true);
+      
+      
+        legends.forEach(hideAllLegends);
+      
           
         if(document.querySelectorAll('input:checked')[0].nextSibling.innerText.substr(1) === 'oct') {
           legendsArray['oct'].hidden = false;
         }
         if (document.querySelectorAll('input:checked')[0].nextSibling.innerText.substr(1) === 'test') {
-            legendsArray['test'].hidden = false;
+          legendsArray['test'].hidden = false;
         }
           
       };
-      
       updateLegend();
       this.on('baselayerchange', e => updateLegend());
     }")
 
+# legends.forEach(a => a.hidden = true);
+# document.querySelectorAll('.legend').forEach(a => a.hidden = true);
 # var currentLegend = legendsArray['oct'];        
 # if (l.innerText == selectedGroup) l.hidden=false;
 # var selectedGroup = document.querySelectorAll('input:checked')[0].nextSibling.innerText.substr(1);
