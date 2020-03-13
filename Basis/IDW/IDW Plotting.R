@@ -14,8 +14,8 @@ cornJanIDW = readRDS("Basis/IDW/cornJanIDW.rds")
 
 if (type == "corn") {
   currentIdwr = cornIDW[["idwr"]]
-  midPoint = cornIDW[["midPoint"]]
-  basisValues = cornIDW[["basisSP"]]
+  currentMidPoint = cornIDW[["midPoint"]]
+  currentBasisValues = cornIDW[["basisSP"]]
   
   octIdwr = cornOctIDW[["idwr"]]
   octMidPoint = cornOctIDW[["midPoint"]]
@@ -33,6 +33,9 @@ if (type == "soybean") {
   currentMidPoint = soybeanIDW[["midPoint"]]
   currentBasisValues = soybeanIDW[["basisSP"]]
   
+  # rescale(s, to=c(0,10))
+  
+  
   octIdwr = soybeanOctIDW[["idwr"]]
   octMidPoint = soybeanOctIDW[["midPoint"]]
   octBasisValues = soybeanOctIDW[["basisSP"]]
@@ -46,7 +49,7 @@ if (type == "soybean") {
 
 # Plot two maps in one
 tm = tm_shape(currentIdwr) + 
-  tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = currentMidPoint,
+  tm_raster(n = 11, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = currentMidPoint,
             title = "Basis (cents)", legend.reverse = TRUE, group = "Current") + 
   tm_shape(currentBasisValues) + 
   tm_dots(size = 0.1, col = "black", popup.vars = c("City" = "City", "Terminal" = "Terminal"), group = "Current") +
@@ -54,7 +57,7 @@ tm = tm_shape(currentIdwr) +
   title + 
   
   tm_shape(octIdwr) + 
-  tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = octMidPoint,
+  tm_raster(n = 11, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = octMidPoint,
             title = "Basis (cents)", legend.reverse = TRUE, group = "October") + 
   tm_shape(octBasisValues) + 
   tm_dots(size = 0.1, col = "black", popup.vars = c("City" = "City", "Terminal" = "Terminal"), group = "October") +
@@ -62,7 +65,7 @@ tm = tm_shape(currentIdwr) +
   title + 
   
   tm_shape(janIdwr) + 
-  tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = janMidPoint,
+  tm_raster(n = 11, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = janMidPoint,
             title = "Basis (cents)", legend.reverse = TRUE, group = "January") + 
   tm_shape(janBasisValues) + 
   tm_dots(size = 0.1, col = "black", popup.vars = c("City" = "City", "Terminal" = "Terminal"), group = "January") +
@@ -107,7 +110,6 @@ tm %>%
           legendsArray['Title'].hidden = false;
           legendsArray['January'].hidden = false;
         }
-          
       };
       updateLegend();
       this.on('baselayerchange', e => updateLegend());
