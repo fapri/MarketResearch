@@ -25,16 +25,18 @@ if (type == "corn") {
   janMidPoint = cornJanIDW[["midPoint"]]
   janBasisValues = cornJanIDW[["basisSP"]]
   
+  From = -0.6
+  midPoint = 0.0
+  To = 0.6
+  
   title = tm_layout(title = "Missouri Corn: 2/28/2020")
 }
+
 
 if (type == "soybean") {
   currentIdwr = soybeanIDW[["idwr"]]
   currentMidPoint = soybeanIDW[["midPoint"]]
   currentBasisValues = soybeanIDW[["basisSP"]]
-  
-  # rescale(s, to=c(0,10))
-  
   
   octIdwr = soybeanOctIDW[["idwr"]]
   octMidPoint = soybeanOctIDW[["midPoint"]]
@@ -44,29 +46,36 @@ if (type == "soybean") {
   janMidPoint = soybeanJanIDW[["midPoint"]]
   janBasisValues = soybeanJanIDW[["basisSP"]]
   
+  From = -1.1
+  midPoint = -0.35
+  To = 0.40
+  
   title = tm_layout(title = "Missouri Soybeans: 2/28/2020")
 }
 
 # Plot two maps in one
 tm = tm_shape(currentIdwr) + 
-  tm_raster(n = 11, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = currentMidPoint,
-            title = "Basis (cents)", legend.reverse = TRUE, group = "Current") + 
+  tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = midPoint,
+            title = "Basis (cents)", legend.reverse = TRUE, group = "Current", 
+            breaks = seq(from = From, to = To, by = 0.1)) + 
   tm_shape(currentBasisValues) + 
   tm_dots(size = 0.1, col = "black", popup.vars = c("City" = "City", "Terminal" = "Terminal"), group = "Current") +
   tm_legend(legend.outside = TRUE) +
   title + 
   
   tm_shape(octIdwr) + 
-  tm_raster(n = 11, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = octMidPoint,
-            title = "Basis (cents)", legend.reverse = TRUE, group = "October") + 
+  tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = midPoint,
+            title = "Basis (cents)", legend.reverse = TRUE, group = "October", 
+            breaks = seq(from = From, to = To, by = 0.1)) + 
   tm_shape(octBasisValues) + 
   tm_dots(size = 0.1, col = "black", popup.vars = c("City" = "City", "Terminal" = "Terminal"), group = "October") +
   tm_legend(legend.outside = TRUE) +
   title + 
   
   tm_shape(janIdwr) + 
-  tm_raster(n = 11, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = janMidPoint,
-            title = "Basis (cents)", legend.reverse = TRUE, group = "January") + 
+  tm_raster(n = 15, palette = "RdYlBu", contrast = c(0.4, 1), midpoint = midPoint,
+            title = "Basis (cents)", legend.reverse = TRUE, group = "January", 
+            breaks = seq(from = From, to = To, by = 0.1)) + 
   tm_shape(janBasisValues) + 
   tm_dots(size = 0.1, col = "black", popup.vars = c("City" = "City", "Terminal" = "Terminal"), group = "January") +
   tm_legend(legend.outside = TRUE) +
