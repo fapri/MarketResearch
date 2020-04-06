@@ -6,6 +6,7 @@ library(readr)
 library(dplyr)
 library(svDialogs)
 library(stringr)
+library(testit)
 
 # Load data
 DcData = read_excel("Decoupling/DecouplingLitData-X.xlsx", 
@@ -92,27 +93,21 @@ selectedProgram = dlgList(choices, preselect = NULL, multiple = FALSE,
                           title = "Program Type")$res
 
 selectedProgram = switch(selectedProgram, 
-                         "All during period" = "AllDuringPeriod",
-                         "Crop insurance" = "CropInsurance",
-                         "ARC" = "Arc",
-                         "PLC" = "Plc",
-                         "SCO" = "Sco",
-                         "CCP" = "Ccp",
-                         "ACRE"  = "Acre",
-                         "Market loss assistance" = "MarketLossAssistance",
-                         "Fixed direct payment (contract payment)" = "FixedDirectPayment",
-                         "Marketing Loan program" = "MarketingLoanProgram",
-                         "Milk Income Loss Contract (MILC)" = "MilkIncomeLossContract",
-                         "Margin Protection Program" = "MarginProtectionProgram",
-                         "Pre-1996 US policy" = "Pre1996UsPolicy",
-                         "Other" = "Other"
+                         "All during period" = "Program_AllDuringPeriod",
+                         "Crop insurance" = "Program_CropInsurance",
+                         "ARC" = "Program_Arc",
+                         "PLC" = "Program_Plc",
+                         "SCO" = "Program_Sco",
+                         "CCP" = "Program_Ccp",
+                         "ACRE"  = "Program_Acre",
+                         "Market loss assistance" = "Program_MarketLossAssistance",
+                         "Fixed direct payment (contract payment)" = "Program_FixedDirectPayment",
+                         "Marketing Loan program" = "Program_MarketingLoanProgram",
+                         "Milk Income Loss Contract (MILC)" = "Program_MilkIncomeLossContract",
+                         "Margin Protection Program" = "Program_MarginProtectionProgram",
+                         "Pre-1996 US policy" = "Program_Pre1996UsPolicy",
+                         "Other" = "Program_Other"
 )
-
-DcData = data.frame(DcData)
-DcData[is.na(DcData)] = 0
-
-programMaster = as.numeric(as.vector(DcData[which(DcData$c1 == "Program" & 
-                                                    DcData$c2 == selectedProgram), 4:ncol(DcData)]))
 
 # Convert the data to a list for key/value access
 tDf = t(DcData)
@@ -121,20 +116,51 @@ colnames(tDf) = row.names(tDf) = NULL
 DcList = lapply(seq_len(ncol(tDf[4:nrow(tDf), ])), function(i) tDf[4:nrow(tDf), ][,i])
 names(DcList) = tDf[3, ]
 
+# Convert to numeric where applicable
 DcList = lapply(DcList, function(col) {
-  if (suppressWarnings(all(!is.na(as.numeric(as.character(col)))))) {
+  if (!has_warning(as.numeric(as.character(col)))) {
     as.numeric(as.character(col))
   } else {
     col
   }
 })
 
-# Initialize data frames
-allDf = estDf = notEstDf = usNatDf = otherDf = template
+template = setNames(as.list(as.data.frame(t(template))), rownames(template))
 
+# Initialize lists
+all = est = notEst = usNat = other = template
 
+# Extract dummy variable for what type of program is used
+programMaster = DcList[[selectedProgram]]
 
+# Match list names
+names(DcList)[grep("DecouplingEffect_PriceEffect", names(DcList))] = "DecouplingEffect_priceEffect"
+names(DcList)[grep("DecouplingEffect_RiskAversion", names(DcList))] = "DecouplingEffect_riskAversion"
+names(DcList)[grep("DecouplingEffect_Wealth", names(DcList))] = "DecouplingEffect_wealth"
+names(DcList)[grep("DecouplingEffect_UpdatingAndExpectations", names(DcList))] = "DecouplingEffect_updating"
+names(DcList)[grep("DecouplingEffect_ExemptionsOrExclusions", names(DcList))] = "DecouplingEffect_exemptions"
+names(DcList)[grep("DecouplingEffect_CreditLiquidity", names(DcList))] = "DecouplingEffect_liquidity"
+names(DcList)[grep("DecouplingEffect_Labor", names(DcList))] = "DecouplingEffect_labor"
+names(DcList)[grep("DecouplingEffect_EntryOrExit", names(DcList))] = "DecouplingEffect_entryExit"
+names(DcList)[grep("DecouplingEffect_Other", names(DcList))] = "DecouplingEffect_other"
+names(DcList)[grep("DecouplingEffect_All", names(DcList))] = "DecouplingEffect_all"
 
+# Create a subsection of the calculations
+# TODO Make this dynamic just by wrapping it in a function and changing "all" to whatever list is given
+for (i in grep("Relavancy", names((all)))) {
+  # DcRelavancy will change for each list!!!!!
+  DcRelavancy = DcList[[which((sub(".*_", "", names(DcList))) == sub("\\_.*", "", names((all[i]))))]]
+  
+  avenue = which((sub("\\_.*", "", names(all))) == sub("\\_.*", "", names((all[i]))))
+  
+  Relavancy = grep("Relavancy", names(all[avenue]))
+  PCOPUP = grep("PCOPUP", names(all[avenue]))
+  PI2MI = grep("PI2MI", names(all[avenue]))
+  
+  all[[avenue[Relavancy]]] = programMaster * DcRelavancy
+  all[[avenue[PCOPUP]]] = all[[avenue[Relavancy]]] * DcList[["ImpactOfPayments_PctChangeOutputPerunitPmt"]]
+  all[[avenue[PI2MI]]] = all[[avenue[Relavancy]]] * DcList[["Ratio_RatioOfPmtImpToMarketImp"]]
+}
 
 
 
