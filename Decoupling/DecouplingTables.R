@@ -18,10 +18,9 @@ templateDf$V1 = NA
 
 
 templateList <- list()
-for (name in row.names(templateDf)){
-  templateList[[name]] = list("data" = NA, "summary" = NA)
+for (name in row.names(templateDf)) {
+  templateList[[name]] = list("data" = NA, "count" = NA, "average" = NA)
 }
-
 
 # Renumber columns
 
@@ -96,8 +95,9 @@ choices = c("All during period",
             "Other"
 )
 
-selectedProgram = dlgList(choices, preselect = NULL, multiple = FALSE,
-                          title = "Program Type")$res
+# selectedProgram = dlgList(choices, preselect = NULL, multiple = FALSE,
+#                           title = "Program Type")$res
+selectedProgram = 1
 
 selectedProgram = switch(selectedProgram, 
                          "All during period" = "Program_AllDuringPeriod",
@@ -197,13 +197,23 @@ usNat = calcLists(usNat, "usNat")
 other = calcLists(other, "other")
 
 
+calcStats = function(subList) {
+  for (i in names(subList)) {
+    subList[[i]]$count = length(which(!is.na(subList[[i]][["data"]])))
+    if (subList[[i]]$count > 0) {
+      subList[[i]]$average = mean(subList[[i]][["data"]], na.rm = TRUE)
+    } else {
+      subList[[i]]$average = NA
+    }
+  }
+  return(subList)
+}
 
 
-
-
-
-
-length(which(!is.na(all[["all_PCOPUP"]])))
-
+all = calcStats(all)
+est = calcStats(est)
+notEst = calcStats(notEst)
+usNat = calcStats(usNat)
+other = calcStats(other)
 
 
