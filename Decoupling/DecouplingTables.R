@@ -7,13 +7,20 @@ library(dplyr)
 library(svDialogs)
 library(stringr)
 library(testit)
+library(tidyr)
 
 # Load data
 DcData = read_excel("Decoupling/DecouplingLitData-X.xlsx", 
                     col_names = FALSE)
-template = read.csv("Decoupling/template.csv", header = FALSE)
-row.names(template) = template$V1
-template$V1 = NA
+templateDf = read.csv("Decoupling/template.csv", header = FALSE)
+row.names(templateDf) = templateDf$V1
+templateDf$V1 = NA
+
+
+templateList <- list()
+for (name in row.names(templateDf)){
+  templateList[[name]] = list("data" = NA, "summary" = NA)
+}
 
 
 # Renumber columns
@@ -125,10 +132,11 @@ DcList = lapply(DcList, function(col) {
   }
 })
 
-template = setNames(as.list(as.data.frame(t(template))), rownames(template))
+# # Convert to list
+# templateDf = setNames(as.list(as.data.frame(t(templateDf))), rownames(templateDf))
 
 # Initialize lists
-all = est = notEst = usNat = other = template
+all = est = notEst = usNat = other = templateList
 
 # Extract dummy variable for what type of program is used
 programMaster = DcList[[selectedProgram]]
@@ -146,29 +154,56 @@ names(DcList)[grep("DecouplingEffect_Other", names(DcList))] = "DecouplingEffect
 names(DcList)[grep("DecouplingEffect_All", names(DcList))] = "DecouplingEffect_all"
 
 # Create a subsection of the calculations
-# TODO Make this dynamic just by wrapping it in a function and changing "all" to whatever list is given
-for (i in grep("Relavancy", names((all)))) {
-  # DcRelavancy will change for each list!!!!!
-  DcRelavancy = DcList[[which((sub(".*_", "", names(DcList))) == sub("\\_.*", "", names((all[i]))))]]
+calcLists = function(subList, id) {
+  if (id == "all") {
+    extraFactors = 1
+  } else if (id == "est") {
+    extraFactors = DcList[["Method_Estimation"]]
+  } else if (id == "notEst") {
+    notEstRelavancy = as.numeric(gsub(1, 5, DcList[["Method_Estimation"]]))
+    notEstRelavancy = replace_na(notEstRelavancy, 1)
+    notEstRelavancy = as.numeric(gsub(1, NA, DcList[["Method_Estimation"]]))
+    extraFactors = notEstRelavancy
+  } else if (id == "usNat") {
+    extraFactors = DcList[["Region_AllOfUS"]]
+  } else if (id == "other") {
+    otherRelavancy = as.numeric(gsub(1, 5, DcList[["Region_AllOfUS"]]))
+    otherRelavancy = replace_na(otherRelavancy, 1)
+    otherRelavancy = as.numeric(gsub(5, NA, DcList[["Region_AllOfUS"]]))
+    extraFactors = otherRelavancy
+  }
   
-  avenue = which((sub("\\_.*", "", names(all))) == sub("\\_.*", "", names((all[i]))))
-  
-  Relavancy = grep("Relavancy", names(all[avenue]))
-  PCOPUP = grep("PCOPUP", names(all[avenue]))
-  PI2MI = grep("PI2MI", names(all[avenue]))
-  
-  all[[avenue[Relavancy]]] = programMaster * DcRelavancy
-  all[[avenue[PCOPUP]]] = all[[avenue[Relavancy]]] * DcList[["ImpactOfPayments_PctChangeOutputPerunitPmt"]]
-  all[[avenue[PI2MI]]] = all[[avenue[Relavancy]]] * DcList[["Ratio_RatioOfPmtImpToMarketImp"]]
+  for (i in grep("Relavancy", names((subList)))) {
+    avenue = which((sub("\\_.*", "", names(subList))) == sub("\\_.*", "", names((subList[i]))))
+    
+    Relavancy = grep("Relavancy", names(subList[avenue]))
+    PCOPUP = grep("PCOPUP", names(subList[avenue]))
+    PI2MI = grep("PI2MI", names(subList[avenue]))
+    
+    subList[[avenue[Relavancy]]][["data"]] = programMaster * 
+      extraFactors * 
+      DcList[[which((sub(".*_", "", names(DcList))) == sub("\\_.*", "", names((subList[i]))))]]
+    subList[[avenue[PCOPUP]]][["data"]] = subList[[avenue[Relavancy]]]$data * DcList[["ImpactOfPayments_PctChangeOutputPerunitPmt"]]
+    subList[[avenue[PI2MI]]][["data"]] = subList[[avenue[Relavancy]]]$data * DcList[["Ratio_RatioOfPmtImpToMarketImp"]]
+  }
+  return(subList)
 }
 
 
+all = calcLists(all, "all")
+est = calcLists(est, "est")
+notEst = calcLists(notEst, "notEst")
+usNat = calcLists(usNat, "usNat")
+other = calcLists(other, "other")
 
 
 
 
 
 
+
+
+length(which(!is.na(all[["all_PCOPUP"]])))
 
 
 
