@@ -8,6 +8,8 @@ library(svDialogs)
 library(stringr)
 library(testit)
 library(tidyr)
+library(flextable)
+library(officer)
 
 # Load data
 DcData = read_excel("Decoupling/DecouplingLitData-X.xlsx", 
@@ -97,7 +99,7 @@ choices = c("All during period",
 
 # selectedProgram = dlgList(choices, preselect = NULL, multiple = FALSE,
 #                           title = "Program Type")$res
-selectedProgram = 1
+selectedProgram = 9
 
 selectedProgram = switch(selectedProgram, 
                          "All during period" = "Program_AllDuringPeriod",
@@ -209,11 +211,83 @@ calcStats = function(subList) {
   return(subList)
 }
 
-
 all = calcStats(all)
 est = calcStats(est)
 notEst = calcStats(notEst)
 usNat = calcStats(usNat)
 other = calcStats(other)
+
+
+
+
+myDt = read_excel("Decoupling/testTable.xlsx", col_names = TRUE)
+myDt = as.data.frame(myDt)
+
+myDt[1, ] = "My Dynamic Selected Program Name"
+
+myft = flextable(myDt)
+
+myft = merge_at(myft, i = 1)
+myft = merge_at(myft, i = 2, j = 1:8)
+myft = merge_at(myft, i = 14, j = 1:6)
+
+myft = set_header_labels(myft, values = list(V1 = " ",
+                                             V2 = " ",
+                                             V3 = " ",
+                                             V4 = "Price Effect",
+                                             V5 = "Price Effect",
+                                             V6 = "Risk Aversion",
+                                             V7 = "Risk Aversion",
+                                             V8 = "Wealth",
+                                             V9 = "Wealth",
+                                             V10 = "Expectations",
+                                             V11 = "Expectations",
+                                             V12 = "Exclusions",
+                                             V13 = "Exclusions",
+                                             V14 = "Liquidity",
+                                             V15 = "Liquidity",
+                                             V16 = "Labor",
+                                             V17 = "Labor",
+                                             V18 = "Entry Or Exit",
+                                             V19 = "Entry Or Exit",
+                                             V20 = "Other",
+                                             V21 = "Other",
+                                             V22 = "All",
+                                             V23 = "All"))
+
+myft = merge_h(myft, part = "header")
+
+myft = align(myft, i = c(1,2,14), align = "left")
+
+
+
+
+std_border = fp_border(color = "black", style = "solid", width = 2)
+myft = hline_bottom(myft, part = "header", border = std_border)
+myft = hline_top(myft, part = "header", border = std_border)
+
+myft = merge_h(myft, part = "header")
+
+# myft = border_inner(myft, border = std_border, part = "all")
+
+myft = width(myft, j = 1:3, width = 1.5)
+myft = width(myft, j = 4:23, width = 0.5)
+
+myft = align(myft, align = "center", part = "header")
+myft = align(myft, j = c(5,7,9,11,13,15,17,19,21,23), align = "left", part = "body")
+
+
+myft = style(myft, i = c(1, 2, 14), pr_t = fp_text(color = "black", bold = TRUE), part = "body")
+style(myft, pr_t = fp_text(color = "black", bold = TRUE, font.size = 10), part = "header")
+
+# Use to create dynamic header
+set_caption(myft, "My Dynamic Title")
+
+
+
+
+
+
+
 
 
