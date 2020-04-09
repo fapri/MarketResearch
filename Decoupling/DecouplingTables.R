@@ -18,11 +18,13 @@ templateDf = read.csv("Decoupling/template.csv", header = FALSE)
 row.names(templateDf) = templateDf$V1
 templateDf$V1 = NA
 
-
 templateList <- list()
 for (name in row.names(templateDf)) {
   templateList[[name]] = list("data" = NA, "count" = NA, "average" = NA)
 }
+
+# Initialize lists
+all = est = notEst = usNat = other = templateList
 
 # Renumber columns
 
@@ -72,51 +74,7 @@ DcData$c2[grep("ListCropOrCrops", DcData$c2)] = "CropOrCrops"
 DcData$c2[grep("PercentChangeInOutputPerunitPaymentDollarOrEuro", DcData$c2)] = "PctChangeOutputPerunitPmt"
 DcData$c2[grep("RatioOfPaymentImpactToMarketImpact", DcData$c2)] = "RatioOfPmtImpToMarketImp"
 
-
-
 DcData$c3 = paste(DcData$c1, DcData$c2, sep = "_")
-
-
-
-###############################################################
-
-
-choices = c("All during period",
-            "Crop insurance",
-            "ARC",
-            "PLC",
-            "SCO",
-            "CCP",
-            "ACRE",
-            "Market loss assistance",
-            "Fixed direct payment (contract payment)",
-            "Marketing Loan program",
-            "Milk Income Loss Contract (MILC)",
-            "Margin Protection Program",
-            "Pre-1996 US policy",
-            "Other"
-)
-
-# selectedProgram = dlgList(choices, preselect = NULL, multiple = FALSE,
-#                           title = "Program Type")$res
-selectedProgram = 9
-
-selectedProgram = switch(selectedProgram, 
-                         "All during period" = "Program_AllDuringPeriod",
-                         "Crop insurance" = "Program_CropInsurance",
-                         "ARC" = "Program_Arc",
-                         "PLC" = "Program_Plc",
-                         "SCO" = "Program_Sco",
-                         "CCP" = "Program_Ccp",
-                         "ACRE"  = "Program_Acre",
-                         "Market loss assistance" = "Program_MarketLossAssistance",
-                         "Fixed direct payment (contract payment)" = "Program_FixedDirectPayment",
-                         "Marketing Loan program" = "Program_MarketingLoanProgram",
-                         "Milk Income Loss Contract (MILC)" = "Program_MilkIncomeLossContract",
-                         "Margin Protection Program" = "Program_MarginProtectionProgram",
-                         "Pre-1996 US policy" = "Program_Pre1996UsPolicy",
-                         "Other" = "Program_Other"
-)
 
 # Convert the data to a list for key/value access
 tDf = t(DcData)
@@ -134,14 +92,77 @@ DcList = lapply(DcList, function(col) {
   }
 })
 
-# # Convert to list
-# templateDf = setNames(as.list(as.data.frame(t(templateDf))), rownames(templateDf))
 
-# Initialize lists
-all = est = notEst = usNat = other = templateList
+###############################################################
+
+
+programChoices = c("All during period",
+                   "Crop insurance",
+                   "ARC",
+                   "PLC",
+                   "SCO",
+                   "CCP",
+                   "ACRE",
+                   "Market loss assistance",
+                   "Fixed direct payment (contract payment)",
+                   "Marketing Loan program",
+                   "Milk Income Loss Contract (MILC)",
+                   "Margin Protection Program",
+                   "Pre-1996 US policy",
+                   "Other"
+)
+
+supplyChoices = c("Area of a Crop or Crops",
+                  "Yield",
+                  "Production of a Crop or Crops",
+                  "All Supply Side Variables")
+
+# selectedProgramText = dlgList(programChoices, preselect = NULL, multiple = FALSE,
+#                           title = "Program Type")$res
+selectedProgramText = "Fixed direct payment (contract payment)"
+
+# selectedSupplyText = dlgList(supplyChoices, preselect = NULL, multiple = FALSE,
+#                          title = "Supply Type")$res
+selectedSupplyText = "Area of a Crop or Crops"
+
+selectedProgram = switch(selectedProgramText, 
+                         "All during period" = "Program_AllDuringPeriod",
+                         "Crop insurance" = "Program_CropInsurance",
+                         "ARC" = "Program_Arc",
+                         "PLC" = "Program_Plc",
+                         "SCO" = "Program_Sco",
+                         "CCP" = "Program_Ccp",
+                         "ACRE"  = "Program_Acre",
+                         "Market loss assistance" = "Program_MarketLossAssistance",
+                         "Fixed direct payment (contract payment)" = "Program_FixedDirectPayment",
+                         "Marketing Loan program" = "Program_MarketingLoanProgram",
+                         "Milk Income Loss Contract (MILC)" = "Program_MilkIncomeLossContract",
+                         "Margin Protection Program" = "Program_MarginProtectionProgram",
+                         "Pre-1996 US policy" = "Program_Pre1996UsPolicy",
+                         "Other" = "Program_Other"
+)
+
+selectedSupply = switch(selectedSupplyText, 
+                        "Area of a Crop or Crops" = c("NatureOfSupply_AreaOfACrop", 
+                                                      "NatureOfSupply_AreaOfAllOrManyCrops"),
+                        "Yield" = "NatureOfSupply_Yield",
+                        "Production of a Crop or Crops" = c("NatureOfSupply_ProductionOfACrop", 
+                                                            "NatureOfSupply_ProductionOfAllCrops"),
+                        "All Supply Side Variables" = "NatureOfSupply_AllSupplysideVariables"
+)
 
 # Extract dummy variable for what type of program is used
 programMaster = DcList[[selectedProgram]]
+# Extract dummy variable for what type of supply is used
+# If there is more than one type then we need to add those together
+if (length(selectedSupply) > 1) {
+  DcList[[selectedSupply[1]]] = replace_na(DcList[[selectedSupply[1]]], 0)
+  DcList[[selectedSupply[2]]] = replace_na(DcList[[selectedSupply[2]]], 0)
+  supplyMaster = DcList[[selectedSupply[1]]] + DcList[[selectedSupply[2]]]
+  supplyMaster = as.numeric(gsub(0, NA, supplyMaster))
+} else {
+  supplyMaster = DcList[[selectedSupply]]
+}
 
 # Match list names
 names(DcList)[grep("DecouplingEffect_PriceEffect", names(DcList))] = "DecouplingEffect_priceEffect"
@@ -155,20 +176,20 @@ names(DcList)[grep("DecouplingEffect_EntryOrExit", names(DcList))] = "Decoupling
 names(DcList)[grep("DecouplingEffect_Other", names(DcList))] = "DecouplingEffect_other"
 names(DcList)[grep("DecouplingEffect_All", names(DcList))] = "DecouplingEffect_all"
 
-# Create a subsection of the calculations
-calcLists = function(subList, id) {
-  if (id == "all") {
+# Create sublists of the calculations
+calcLists = function(subList, programId) {
+  if (programId == "all") {
     extraFactors = 1
-  } else if (id == "est") {
+  } else if (programId == "est") {
     extraFactors = DcList[["Method_Estimation"]]
-  } else if (id == "notEst") {
+  } else if (programId == "notEst") {
     notEstRelavancy = as.numeric(gsub(1, 5, DcList[["Method_Estimation"]]))
     notEstRelavancy = replace_na(notEstRelavancy, 1)
     notEstRelavancy = as.numeric(gsub(1, NA, DcList[["Method_Estimation"]]))
     extraFactors = notEstRelavancy
-  } else if (id == "usNat") {
+  } else if (programId == "usNat") {
     extraFactors = DcList[["Region_AllOfUS"]]
-  } else if (id == "other") {
+  } else if (programId == "other") {
     otherRelavancy = as.numeric(gsub(1, 5, DcList[["Region_AllOfUS"]]))
     otherRelavancy = replace_na(otherRelavancy, 1)
     otherRelavancy = as.numeric(gsub(5, NA, DcList[["Region_AllOfUS"]]))
@@ -182,7 +203,7 @@ calcLists = function(subList, id) {
     PCOPUP = grep("PCOPUP", names(subList[avenue]))
     PI2MI = grep("PI2MI", names(subList[avenue]))
     
-    subList[[avenue[Relavancy]]][["data"]] = programMaster * 
+    subList[[avenue[Relavancy]]][["data"]] = programMaster * supplyMaster * 
       extraFactors * 
       DcList[[which((sub(".*_", "", names(DcList))) == sub("\\_.*", "", names((subList[i]))))]]
     subList[[avenue[PCOPUP]]][["data"]] = subList[[avenue[Relavancy]]]$data * DcList[["ImpactOfPayments_PctChangeOutputPerunitPmt"]]
@@ -191,14 +212,14 @@ calcLists = function(subList, id) {
   return(subList)
 }
 
-
+# Run the function for all the sublists
 all = calcLists(all, "all")
 est = calcLists(est, "est")
 notEst = calcLists(notEst, "notEst")
 usNat = calcLists(usNat, "usNat")
 other = calcLists(other, "other")
 
-
+# Calculates the number of observations triggered and averages the values
 calcStats = function(subList) {
   for (i in names(subList)) {
     subList[[i]]$count = length(which(!is.na(subList[[i]][["data"]])))
@@ -211,6 +232,7 @@ calcStats = function(subList) {
   return(subList)
 }
 
+# Run the function for all the sublists
 all = calcStats(all)
 est = calcStats(est)
 notEst = calcStats(notEst)
@@ -218,14 +240,15 @@ usNat = calcStats(usNat)
 other = calcStats(other)
 
 
+###############################################################
 
 
-myDt = read_excel("Decoupling/testTable.xlsx", col_names = TRUE)
-myDt = as.data.frame(myDt)
+tableTemplate = read_excel("Decoupling/testTable.xlsx", col_names = TRUE)
+tableTemplate = as.data.frame(tableTemplate)
 
-myDt[1, ] = "My Dynamic Selected Program Name"
+tableTemplate[1, ] = selectedProgramText
 
-myft = flextable(myDt)
+myft = flextable(tableTemplate)
 
 myft = merge_at(myft, i = 1)
 myft = merge_at(myft, i = 2, j = 1:8)
@@ -259,9 +282,6 @@ myft = merge_h(myft, part = "header")
 
 myft = align(myft, i = c(1,2,14), align = "left")
 
-
-
-
 std_border = fp_border(color = "black", style = "solid", width = 2)
 myft = hline_bottom(myft, part = "header", border = std_border)
 myft = hline_top(myft, part = "header", border = std_border)
@@ -278,10 +298,12 @@ myft = align(myft, j = c(5,7,9,11,13,15,17,19,21,23), align = "left", part = "bo
 
 
 myft = style(myft, i = c(1, 2, 14), pr_t = fp_text(color = "black", bold = TRUE), part = "body")
-style(myft, pr_t = fp_text(color = "black", bold = TRUE, font.size = 10), part = "header")
+myft = style(myft, pr_t = fp_text(color = "black", bold = TRUE, font.size = 10), part = "header")
 
 # Use to create dynamic header
-set_caption(myft, "My Dynamic Title")
+set_caption(myft, paste0("Avenue of Payment Impact on ", 
+                         selectedSupplyText, 
+                         ", Number of Observations. and Simple Average"))
 
 
 
