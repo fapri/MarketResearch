@@ -14,16 +14,23 @@ library(flextable)
 library(officer)
 
 # Load data
-DcData = read_excel("Decoupling/DecouplingLitData-X.xlsx", 
+DcData = read_excel("Decoupling/DecouplingLitDataNew.xlsx", 
                     col_names = FALSE)
 
 # Renumber columns
 colnames(DcData) = paste0("c", seq(from = 1, to = ncol(DcData), by = 1))
 
-# Clean data
-DcData$c1 = gsub("NEW SECTION", NA, DcData$c1)
-DcData$c1 = gsub(" - NOT USED FOR NOW", "", DcData$c1)
+# Remove NA rows
 DcData = DcData[rowSums(is.na(DcData)) != ncol(DcData),]
+
+# Carry "notes" titles down to rows with notes
+for (row in 1:(nrow(DcData) - 1)) {
+  if (length(grep("Notes", DcData$c2[row])) > 0 & is.na(DcData$c1[row + 1]) & is.na(DcData$c2[row + 1])) {
+    DcData$c2[row + 1] = "Notes"
+  }
+}
+
+# Clean data
 DcData = DcData[-grep("Notes", DcData$c2), ]
 DcData$c1[grep("Nature of supply variable", DcData$c2)] = "Nature of supply variable"
 DcData$c2[grep("Nature of supply variable", DcData$c2)] = NA
@@ -117,8 +124,11 @@ for (i in seq(length(tempAvenues))) {
 # Convert to a list of lists for key/value access
 templateList = list()
 for (i in avenues) {
-  templateList[[i]] = list("data" = NA, "count" = NA, "average" = NA)
+  templateList[[i]] = list("data" = NA, "count" = NA, "studyCount" = NA, "median" = NA,
+                           "simpleAvg" = NA, "studyWeightAvg" = NA, "studyAiWeightAvg" = NA)
 }
+
+
 
 # Initialize lists
 all = est = notEst = usNat = other = templateList
@@ -162,11 +172,11 @@ selectedSupplyText = "Area of a Crop or Crops"
 selectedProgram = switch(selectedProgramText, 
                          "All during period" = "Program_AllDuringPeriod",
                          "Crop insurance" = "Program_CropInsurance",
-                         "ARC" = "Program_Arc",
-                         "PLC" = "Program_Plc",
-                         "SCO" = "Program_Sco",
-                         "CCP" = "Program_Ccp",
-                         "ACRE"  = "Program_Acre",
+                         "ARC" = "Program_AgriculturalRiskCoverage",
+                         "PLC" = "Program_PriceLossCoverate",
+                         "SCO" = "Program_SupplementalCoverageOption",
+                         "CCP" = "Program_CountercyclicalPayments",
+                         "ACRE"  = "Program_AverageCropRevenueElection",
                          "Market loss assistance" = "Program_MarketLossAssistance",
                          "Fixed direct payment (contract payment)" = "Program_FixedDirectPayment",
                          "Marketing Loan program" = "Program_MarketingLoanProgram",
@@ -247,10 +257,11 @@ other = calcLists(other, "other")
 calcStats = function(subList) {
   for (i in names(subList)) {
     subList[[i]]$count = length(which(!is.na(subList[[i]][["data"]])))
+    
     if (subList[[i]]$count > 0) {
-      subList[[i]]$average = mean(subList[[i]][["data"]], na.rm = TRUE)
+      subList[[i]]$simpleAvg = mean(subList[[i]][["data"]], na.rm = TRUE)
     } else {
-      subList[[i]]$average = NA
+      subList[[i]]$simpleAvg = NA
     }
   }
   return(subList)
