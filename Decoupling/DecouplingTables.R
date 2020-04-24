@@ -100,13 +100,10 @@ DcList = lapply(DcList, function(col) {
 
 # Create temp vector of the avenues
 tempAvenues = c("PriceEffect_",
-                "RiskAversion_",
-                "Wealth_",
+                "RiskReduction_",
+                "RiskAndWealth_",
                 "UpdatingAndExpectations_",
                 "ExemptionsOrExclusions_",
-                "CreditLiquidity_",
-                "Labor_",
-                "EntryOrExit_",
                 "Other_",
                 "All_")
 
@@ -131,7 +128,26 @@ for (i in avenues) {
 
 
 # Initialize lists
-all = est = notEst = usNat = other = templateList
+# Region and Own effect
+usNat = cornBelt = otherRegion = templateList
+# Methods and own effect
+estPS = estMD = simuOrTheory = templateList
+# All and own effect
+all = templateList
+# Nature of effect
+crossEffect = allCrops = oneCrop = templateList
+
+
+# usNat
+# cornBelt
+# otherRegion
+# estPS
+# estMD
+# simuOrTheory
+# all
+# crossEffect
+# allCrops
+# oneCrop
 
 ###############################################################
 
@@ -214,16 +230,26 @@ calcLists = function(subList, programId) {
   # Extra factors are other conditions to consider, such as studies covering all of the US
   if (programId == "all") {
     extraFactors = 1
-  } else if (programId == "est") {
+  }
+  
+  #######################
+  # CHANGE THIS SECTION
+  else if (programId == "est") {
     extraFactors = DcList[["Method_Estimation"]]
   } else if (programId == "notEst") {
     notEstRelavancy = as.numeric(gsub(1, 5, DcList[["Method_Estimation"]]))
     notEstRelavancy = replace_na(notEstRelavancy, 1)
     notEstRelavancy = as.numeric(gsub(1, NA, DcList[["Method_Estimation"]]))
     extraFactors = notEstRelavancy
-  } else if (programId == "usNat") {
+  }
+  #######################
+  
+  
+  else if (programId == "usNat") {
     extraFactors = DcList[["Region_AllOfUS"]]
-  } else if (programId == "other") {
+  } 
+  # ADD CORN BELT
+  else if (programId == "otherRegion") {
     otherRelavancy = as.numeric(gsub(1, 5, DcList[["Region_AllOfUS"]]))
     otherRelavancy = replace_na(otherRelavancy, 1)
     otherRelavancy = as.numeric(gsub(5, NA, DcList[["Region_AllOfUS"]]))
@@ -247,11 +273,18 @@ calcLists = function(subList, programId) {
 }
 
 # Run the function for all the sublists
-all = calcLists(all, "all")
-est = calcLists(est, "est")
-notEst = calcLists(notEst, "notEst")
 usNat = calcLists(usNat, "usNat")
-other = calcLists(other, "other")
+cornBelt = calcLists(cornBelt, "cornBelt")
+otherRegion = calcLists(otherRegion, "otherRegion")
+estPS = calcLists(estPS, "estPS")
+estMD = calcLists(estMD, "estMD")
+simuOrTheory = calcLists(simuOrTheory, "simuOrTheory")
+all = calcLists(all, "all")
+crossEffect = calcLists(crossEffect, "crossEffect")
+allCrops = calcLists(allCrops, "allCrops")
+oneCrop = calcLists(oneCrop, "oneCrop")
+  
+
 
 # Calculates the number of observations triggered and averages the values
 calcStats = function(subList) {
