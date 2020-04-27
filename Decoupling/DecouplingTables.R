@@ -232,28 +232,62 @@ calcLists = function(subList, programId) {
     extraFactors = 1
   }
   
-  #######################
-  # CHANGE THIS SECTION
-  else if (programId == "est") {
-    extraFactors = DcList[["Method_Estimation"]]
-  } else if (programId == "notEst") {
-    notEstRelavancy = as.numeric(gsub(1, 5, DcList[["Method_Estimation"]]))
-    notEstRelavancy = replace_na(notEstRelavancy, 1)
-    notEstRelavancy = as.numeric(gsub(1, NA, DcList[["Method_Estimation"]]))
-    extraFactors = notEstRelavancy
+  # Estimation: Panel or survey
+  else if (programId == "estPS") {
+    panelSurveySum = replace_na(DcList[["Method_EstSurveyData"]], 0) + 
+      replace_na(DcList[["Method_EstBalPanelData"]], 0) + 
+      replace_na(DcList[["Method_EstUnbalPanelData"]], 0)
+    extraFactors = as.numeric(gsub(0, NA, panelSurveySum))
+  } 
+  
+  # Estimation: Market Data
+  else if (programId == "estMD") {
+    extraFactors = DcList[["Method_EstMarketData"]]
   }
+  
+  # Method: Simulation or Theory
+  else if (programId == "simuOrTheory") {
+    simuOrTheorySum = replace_na(DcList[["Method_Simulation"]], 0) + 
+      replace_na(DcList[["Method_Theory"]], 0)
+    extraFactors = as.numeric(gsub(0, NA, simuOrTheorySum))
+  }
+  
+  
   #######################
   
+  # Effect: cross effect
+  else if (programId == "crossEffect") {
+    
+  } 
   
+  # Effect: all crops
+  else if (programId == "allCrops") {
+    
+  } 
+  
+  # Effect: one crop
+  else if (programId == "oneCrop") {
+    
+  } 
+  
+  #######################
+  
+  # Us national
   else if (programId == "usNat") {
     extraFactors = DcList[["Region_AllOfUS"]]
   } 
-  # ADD CORN BELT
+  
+  # Corn belt
+  else if (programId == "cornBelt") {
+    extraFactors = DcList[["Region_CornBelt"]]
+  } 
+  
+  # Other Regions
   else if (programId == "otherRegion") {
-    otherRelavancy = as.numeric(gsub(1, 5, DcList[["Region_AllOfUS"]]))
-    otherRelavancy = replace_na(otherRelavancy, 1)
-    otherRelavancy = as.numeric(gsub(5, NA, DcList[["Region_AllOfUS"]]))
-    extraFactors = otherRelavancy
+    # exclude the US and Corn Belt
+    otherRelavancy = replace_na(DcList[["Region_AllOfUS"]], 0) + 
+      replace_na(DcList[["Region_CornBelt"]], 0)
+    extraFactors = as.numeric(gsub(0, NA, (1 - otherRelavancy)))
   }
   
   # Pull relavancy, calculate averages, and get a count of observations
