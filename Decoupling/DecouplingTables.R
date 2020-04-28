@@ -171,8 +171,7 @@ programChoices = c("All during period",
 # Set supply choices for user
 supplyChoices = c("Area of a Crop or Crops",
                   "Yield",
-                  "Production of a Crop or Crops",
-                  "All Supply Side Variables")
+                  "Production of a Crop or Crops")
 
 # # Dialogue boxes for user input
 # selectedProgramText = dlgList(programChoices, preselect = NULL, multiple = FALSE,
@@ -204,32 +203,39 @@ selectedProgram = switch(selectedProgramText,
 
 # Convert user selection to list key name for access by name
 selectedSupply = switch(selectedSupplyText, 
-                        "Area of a Crop or Crops" = c("NatureOfSupply_AreaOfACrop", 
-                                                      "NatureOfSupply_AreaOfAllOrManyCrops"),
-                        "Yield" = "NatureOfSupply_Yield",
-                        "Production of a Crop or Crops" = c("NatureOfSupply_ProductionOfACrop", 
-                                                            "NatureOfSupply_ProductionOfAllCrops"),
-                        "All Supply Side Variables" = "NatureOfSupply_AllSupplysideVariables"
+                        "Area of a Crop or Crops" = "area",
+                        "Yield" = "yield",
+                        "Production of a Crop or Crops" = "production"
 )
 
 # Extract dummy variable for what type of program is used
 programMaster = DcList[[selectedProgram]]
 # Extract dummy variable for what type of supply is used
-# If there is more than one type then we need to add those together
-if (length(selectedSupply) > 1) {
-  DcList[[selectedSupply[1]]] = replace_na(DcList[[selectedSupply[1]]], 0)
-  DcList[[selectedSupply[2]]] = replace_na(DcList[[selectedSupply[2]]], 0)
-  supplyMaster = DcList[[selectedSupply[1]]] + DcList[[selectedSupply[2]]]
-  supplyMaster = as.numeric(gsub(0, NA, supplyMaster))
-} else {
-  supplyMaster = DcList[[selectedSupply]]
-}
+
+
+# Convert NA to 0
+DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]] = 
+  replace_na(DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]], 0)
+
+# Get cross effect indexes
+noCrossEffect = 1 - DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]]
+crossEffect = DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]]
+
+
+
+
+# subList = allCrops
+# programId = "allCrops"
+# tableType = selectedSupply
+
+
 
 # Create sublists of the calculations
-calcLists = function(subList, programId) {
+calcLists = function(subList, programId, tableType) {
   # Extra factors are other conditions to consider, such as studies covering all of the US
   if (programId == "all") {
     extraFactors = 1
+    crossEffectFactor = noCrossEffect
   }
   
   # Estimation: Panel or survey
@@ -238,11 +244,13 @@ calcLists = function(subList, programId) {
       replace_na(DcList[["Method_EstBalPanelData"]], 0) + 
       replace_na(DcList[["Method_EstUnbalPanelData"]], 0)
     extraFactors = as.numeric(gsub(0, NA, panelSurveySum))
+    crossEffectFactor = noCrossEffect
   } 
   
   # Estimation: Market Data
   else if (programId == "estMD") {
     extraFactors = DcList[["Method_EstMarketData"]]
+    crossEffectFactor = noCrossEffect
   }
   
   # Method: Simulation or Theory
@@ -250,36 +258,19 @@ calcLists = function(subList, programId) {
     simuOrTheorySum = replace_na(DcList[["Method_Simulation"]], 0) + 
       replace_na(DcList[["Method_Theory"]], 0)
     extraFactors = as.numeric(gsub(0, NA, simuOrTheorySum))
+    crossEffectFactor = noCrossEffect
   }
-  
-  
-  #######################
-  
-  # Effect: cross effect
-  else if (programId == "crossEffect") {
-    
-  } 
-  
-  # Effect: all crops
-  else if (programId == "allCrops") {
-    
-  } 
-  
-  # Effect: one crop
-  else if (programId == "oneCrop") {
-    
-  } 
-  
-  #######################
   
   # Us national
   else if (programId == "usNat") {
     extraFactors = DcList[["Region_AllOfUS"]]
+    crossEffectFactor = noCrossEffect
   } 
   
   # Corn belt
   else if (programId == "cornBelt") {
     extraFactors = DcList[["Region_CornBelt"]]
+    crossEffectFactor = noCrossEffect
   } 
   
   # Other Regions
@@ -288,6 +279,49 @@ calcLists = function(subList, programId) {
     otherRelavancy = replace_na(DcList[["Region_AllOfUS"]], 0) + 
       replace_na(DcList[["Region_CornBelt"]], 0)
     extraFactors = as.numeric(gsub(0, NA, (1 - otherRelavancy)))
+    crossEffectFactor = noCrossEffect
+  }
+ 
+  # Effect: cross effect
+  else if (programId == "crossEffect") {
+    extraFactors = 1
+    crossEffectFactor = crossEffect
+  } 
+  
+  # Effect: all crops
+  else if (programId == "allCrops") {
+    if (tableType == "area") {
+      extraFactors = DcList[["NatureOfSupply_AreaOfAllOrManyCrops"]]
+      crossEffectFactor = 1
+    }
+    
+    else if (tableType == "production") {
+      extraFactors = DcList[["NatureOfSupply_ProductionOfAllCrops"]]
+      crossEffectFactor = 1
+    }
+    
+    else if (tableType == "yield") {
+      extraFactors = 0
+      crossEffectFactor = 0
+    }
+  } 
+  
+  # Effect: one crop
+  else if (programId == "oneCrop") {
+    if (tableType = "area") {
+      extraFactors = DcList[["NatureOfSupply_AreaOfACrop"]]
+      crossEffectFactor = 1
+    }
+    
+    else if (tableType = "production") {
+      extraFactors = DcList[["NatureOfSupply_ProductionOfACrop"]]
+      crossEffectFactor = 1
+    }
+    
+    else if (tableType = "yield") {
+      extraFactors = DcList[["NatureOfSupply_Yield"]]
+      crossEffectFactor = 1
+    }
   }
   
   # Pull relavancy, calculate averages, and get a count of observations
@@ -298,7 +332,7 @@ calcLists = function(subList, programId) {
     PCOPUP = grep("PCOPUP", names(subList[avenue]))
     PI2MI = grep("PI2MI", names(subList[avenue]))
     
-    subList[[avenue[Relavancy]]][["data"]] = programMaster * supplyMaster * extraFactors * 
+    subList[[avenue[Relavancy]]][["data"]] = programMaster * extraFactors * crossEffectFactor * 
       DcList[[which((sub(".*_", "", names(DcList))) == sub("\\_.*", "", names((subList[i]))))]]
     subList[[avenue[PCOPUP]]][["data"]] = subList[[avenue[Relavancy]]]$data * DcList[["ImpactOfPayments_PctChangeOutputPerunitPmt"]]
     subList[[avenue[PI2MI]]][["data"]] = subList[[avenue[Relavancy]]]$data * DcList[["Ratio_RatioOfPmtImpToMarketImp"]]
@@ -307,16 +341,16 @@ calcLists = function(subList, programId) {
 }
 
 # Run the function for all the sublists
-usNat = calcLists(usNat, "usNat")
-cornBelt = calcLists(cornBelt, "cornBelt")
-otherRegion = calcLists(otherRegion, "otherRegion")
-estPS = calcLists(estPS, "estPS")
-estMD = calcLists(estMD, "estMD")
-simuOrTheory = calcLists(simuOrTheory, "simuOrTheory")
-all = calcLists(all, "all")
-crossEffect = calcLists(crossEffect, "crossEffect")
-allCrops = calcLists(allCrops, "allCrops")
-oneCrop = calcLists(oneCrop, "oneCrop")
+usNat = calcLists(usNat, "usNat", selectedSupply)
+cornBelt = calcLists(cornBelt, "cornBelt", selectedSupply)
+otherRegion = calcLists(otherRegion, "otherRegion", selectedSupply)
+estPS = calcLists(estPS, "estPS", selectedSupply)
+estMD = calcLists(estMD, "estMD", selectedSupply)
+simuOrTheory = calcLists(simuOrTheory, "simuOrTheory", selectedSupply)
+all = calcLists(all, "all", selectedSupply)
+crossEffect = calcLists(crossEffect, "crossEffect", selectedSupply)
+allCrops = calcLists(allCrops, "allCrops", selectedSupply)
+oneCrop = calcLists(oneCrop, "oneCrop", selectedSupply)
   
 
 
