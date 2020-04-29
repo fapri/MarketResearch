@@ -121,7 +121,7 @@ for (i in seq(length(tempAvenues))) {
 # Convert to a list of lists for key/value access
 templateList = list()
 for (i in avenues) {
-  templateList[[i]] = list("data" = NA, "count" = NA, "studyCount" = NA, "median" = NA,
+  templateList[[i]] = list("data" = NA, "studyIndex" = NA,"count" = NA, "studyCount" = NA, "median" = NA,
                            "simpleAvg" = NA, "studyWeightAvg" = NA, "studyAiWeightAvg" = NA)
 }
 
@@ -238,10 +238,10 @@ crossEffect = DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]]
 
 
 
-i = 1
-subList = subLists[[i]]
-programId = names(subLists)[i]
-tableType = selectedSupply
+# i = 1
+# subList = subLists[[i]]
+# programId = names(subLists)[i]
+# tableType = selectedSupply
 
 
 # Create sublists of the calculations
@@ -338,7 +338,7 @@ calcLists = function(subList, programId, tableType) {
     }
   }
   
-  # Pull relavancy, calculate averages, and get a count of observations
+  # Pull relavancy and apply it to the PCOPUP and PI2MI data
   for (i in grep("Relavancy", names((subList)))) {
     avenue = which((sub("\\_.*", "", names(subList))) == sub("\\_.*", "", names((subList[i]))))
     
@@ -346,10 +346,13 @@ calcLists = function(subList, programId, tableType) {
     PCOPUP = grep("PCOPUP", names(subList[avenue]))
     PI2MI = grep("PI2MI", names(subList[avenue]))
     
-    subList[[avenue[Relavancy]]][["data"]] = programMaster * extraFactors * crossEffectFactor * 
+    subList[[avenue[Relavancy]]][["data"]] = programMaster * extraFactors * crossEffectFactor *
       DcList[[which((sub(".*_", "", names(DcList))) == sub("\\_.*", "", names((subList[i]))))]]
     subList[[avenue[PCOPUP]]][["data"]] = subList[[avenue[Relavancy]]]$data * DcList[["ImpactOfPayments_PctChangeOutputPerunitPmt"]]
     subList[[avenue[PI2MI]]][["data"]] = subList[[avenue[Relavancy]]]$data * DcList[["Ratio_RatioOfPmtImpToMarketImp"]]
+
+    subList[[avenue[Relavancy]]]$studyIndex = subList[[avenue[PCOPUP]]]$studyIndex = 
+      subList[[avenue[PI2MI]]]$studyIndex = subList[[avenue[Relavancy]]]$data * DcList[["Study_NA"]]
   }
   return(subList)
 }
@@ -359,26 +362,33 @@ for (i in seq_len(length(subLists))) {
   subLists[[i]] = calcLists(subLists[[i]], names(subLists)[i], selectedSupply)
 }
 
+# i = 1
+# subList = subLists[[i]]
+
 # Calculates the number of observations triggered and averages the values
 calcStats = function(subList) {
   for (i in names(subList)) {
     subList[[i]]$count = length(which(!is.na(subList[[i]][["data"]])))
     
+    subList[[i]]$studyCount = length(unique(na.omit(subList[[i]][["studyIndex"]])))
+    
     if (subList[[i]]$count > 0) {
       subList[[i]]$simpleAvg = mean(subList[[i]][["data"]], na.rm = TRUE)
+      subList[[i]]$median = median(subList[[i]][["data"]], na.rm = TRUE)
+      # Will require something with table(subList[[i]][["studyIndex"]])
+      # subList[[i]]$studyWeightAvg
     } else {
       subList[[i]]$simpleAvg = NA
+      subList[[i]]$median = NA
     }
   }
   return(subList)
 }
 
 # Run the function for all the sublists
-all = calcStats(all)
-est = calcStats(est)
-notEst = calcStats(notEst)
-usNat = calcStats(usNat)
-other = calcStats(other)
+for (i in seq_len(length(subLists))) {
+  subLists[[i]] = calcStats(subLists[[i]])
+}
 
 
 ###############################################################
