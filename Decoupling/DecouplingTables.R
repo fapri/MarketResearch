@@ -125,8 +125,6 @@ for (i in avenues) {
                            "simpleAvg" = NA, "studyWeightAvg" = NA, "studyAiWeightAvg" = NA)
 }
 
-
-
 # Initialize lists
 # Region and Own effect
 usNat = cornBelt = otherRegion = templateList
@@ -135,8 +133,18 @@ estPS = estMD = simuOrTheory = templateList
 # All and own effect
 all = templateList
 # Nature of effect
-crossEffect = allCrops = oneCrop = templateList
+allCrossEffect = allCrops = oneCrop = templateList
 
+subLists = list("usNat" = usNat,
+                "cornBelt" = cornBelt,
+                "otherRegion" = otherRegion,
+                "estPS" = estPS,
+                "estMD" = estMD,
+                "simuOrTheory" = simuOrTheory,
+                "all" = all,
+                "allCrossEffect" = allCrossEffect,
+                "allCrops" = allCrops,
+                "oneCrop" = oneCrop)
 
 # usNat
 # cornBelt
@@ -145,7 +153,7 @@ crossEffect = allCrops = oneCrop = templateList
 # estMD
 # simuOrTheory
 # all
-# crossEffect
+# allCrossEffect
 # allCrops
 # oneCrop
 
@@ -230,6 +238,12 @@ crossEffect = DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]]
 
 
 
+i = 1
+subList = subLists[[i]]
+programId = names(subLists)[i]
+tableType = selectedSupply
+
+
 # Create sublists of the calculations
 calcLists = function(subList, programId, tableType) {
   # Extra factors are other conditions to consider, such as studies covering all of the US
@@ -283,7 +297,7 @@ calcLists = function(subList, programId, tableType) {
   }
  
   # Effect: cross effect
-  else if (programId == "crossEffect") {
+  else if (programId == "allCrossEffect") {
     extraFactors = 1
     crossEffectFactor = crossEffect
   } 
@@ -308,17 +322,17 @@ calcLists = function(subList, programId, tableType) {
   
   # Effect: one crop
   else if (programId == "oneCrop") {
-    if (tableType = "area") {
+    if (tableType == "area") {
       extraFactors = DcList[["NatureOfSupply_AreaOfACrop"]]
       crossEffectFactor = 1
     }
     
-    else if (tableType = "production") {
+    else if (tableType == "production") {
       extraFactors = DcList[["NatureOfSupply_ProductionOfACrop"]]
       crossEffectFactor = 1
-    }
+    } 
     
-    else if (tableType = "yield") {
+    else if (tableType == "yield") {
       extraFactors = DcList[["NatureOfSupply_Yield"]]
       crossEffectFactor = 1
     }
@@ -341,18 +355,9 @@ calcLists = function(subList, programId, tableType) {
 }
 
 # Run the function for all the sublists
-usNat = calcLists(usNat, "usNat", selectedSupply)
-cornBelt = calcLists(cornBelt, "cornBelt", selectedSupply)
-otherRegion = calcLists(otherRegion, "otherRegion", selectedSupply)
-estPS = calcLists(estPS, "estPS", selectedSupply)
-estMD = calcLists(estMD, "estMD", selectedSupply)
-simuOrTheory = calcLists(simuOrTheory, "simuOrTheory", selectedSupply)
-all = calcLists(all, "all", selectedSupply)
-crossEffect = calcLists(crossEffect, "crossEffect", selectedSupply)
-allCrops = calcLists(allCrops, "allCrops", selectedSupply)
-oneCrop = calcLists(oneCrop, "oneCrop", selectedSupply)
-  
-
+for (i in seq_len(length(subLists))) {
+  subLists[[i]] = calcLists(subLists[[i]], names(subLists)[i], selectedSupply)
+}
 
 # Calculates the number of observations triggered and averages the values
 calcStats = function(subList) {
