@@ -12,6 +12,7 @@ library(testit)
 library(tidyr)
 library(flextable)
 library(officer)
+library(tidyverse)
 
 # Load data
 DcData = read_excel("Decoupling/DecouplingLitDataNew.xlsx", 
@@ -375,11 +376,21 @@ calcStats = function(subList) {
     if (subList[[i]]$count > 0) {
       subList[[i]]$simpleAvg = mean(subList[[i]][["data"]], na.rm = TRUE)
       subList[[i]]$median = median(subList[[i]][["data"]], na.rm = TRUE)
-      # Will require something with table(subList[[i]][["studyIndex"]])
-      # subList[[i]]$studyWeightAvg
+      
+      subList[[i]]$studyWeightAvg = na.omit(data.frame("index" = subList[[i]][["studyIndex"]], 
+                                                       "data" = subList[[i]][["data"]])) %>% 
+        group_by(index) %>% 
+        summarise(average = mean(data, na.rm = TRUE)) %>%
+        summarise(newAvg = mean(average, na.rm = TRUE)) %>%
+        pull(newAvg)
+      
+      subList[[i]]$studyAiWeightAvg = NA
+      
     } else {
       subList[[i]]$simpleAvg = NA
       subList[[i]]$median = NA
+      subList[[i]]$studyWeightAvg = NA
+      subList[[i]]$studyAiWeightAvg = NA
     }
   }
   return(subList)
