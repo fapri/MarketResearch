@@ -404,8 +404,9 @@ for (i in seq_len(length(subLists))) {
 
 ###############################################################
 
+
 # Template for loading data into the table
-tableTemplate = read_excel("Decoupling/tableTemplate.xlsx", col_names = TRUE)
+tableTemplate = read_excel("Decoupling/tableTemplate.xlsx", col_names = TRUE, sheet = 2)
 tableTemplate = as.data.frame(tableTemplate)
 
 # Dynamic program identifier
@@ -417,7 +418,16 @@ myft = flextable(tableTemplate)
 # Merge duplicate columns, row-wise
 myft = merge_at(myft, i = 1)
 myft = merge_at(myft, i = 2, j = 1:8)
-myft = merge_at(myft, i = 14, j = 1:6)
+myft = merge_at(myft, i = 3, j = 2:3)
+myft = merge_at(myft, i = 13, j = 2:3)
+myft = merge_at(myft, i = 23, j = 2:3)
+myft = merge_at(myft, i = 26, j = 2:3)
+myft = merge_at(myft, i = 36, j = 1:6)
+myft = merge_at(myft, i = 37, j = 2:3)
+myft = merge_at(myft, i = 47, j = 2:3)
+myft = merge_at(myft, i = 57, j = 2:3)
+myft = merge_at(myft, i = 60, j = 2:3)
+myft = merge_v(myft, j = 3)
 
 # Rename columns
 # These cannot be put into the template because the column names would not be unique
@@ -426,47 +436,103 @@ myft = set_header_labels(myft, values = list(V1 = " ",
                                              V3 = " ",
                                              V4 = "Price Effect",
                                              V5 = "Price Effect",
-                                             V6 = "Risk Aversion",
-                                             V7 = "Risk Aversion",
-                                             V8 = "Wealth",
-                                             V9 = "Wealth",
-                                             V10 = "Expectations",
-                                             V11 = "Expectations",
-                                             V12 = "Exclusions",
-                                             V13 = "Exclusions",
-                                             V14 = "Liquidity",
-                                             V15 = "Liquidity",
-                                             V16 = "Labor",
-                                             V17 = "Labor",
-                                             V18 = "Entry Or Exit",
-                                             V19 = "Entry Or Exit",
-                                             V20 = "Other",
-                                             V21 = "Other",
-                                             V22 = "All",
-                                             V23 = "All"))
+                                             V6 = "Price Effect",
+                                             V7 = "Risk Reduction",
+                                             V8 = "Risk Reduction",
+                                             V9 = "Risk Reduction",
+                                             V10 = "Risk and Wealth",
+                                             V11 = "Risk and Wealth",
+                                             V12 = "Risk and Wealth",
+                                             V13 = "Updating and Expectations",
+                                             V14 = "Updating and Expectations",
+                                             V15 = "Updating and Expectations",
+                                             V16 = "Other",
+                                             V17 = "Other",
+                                             V18 = "Other",
+                                             V19 = "All",
+                                             V20 = "All",
+                                             V21 = "All"))
+
+# myft = border_inner(myft, border = fp_border(color = "black", width = 1))
 
 # Merge duplicate columns in the header
 myft = merge_h(myft, part = "header")
 
 # Align some rows to the left
-myft = align(myft, i = c(1,2,14), align = "left")
+myft = align(myft, i = c(1, 2, 3, 13, 23, 26, 36,37, 47, 57, 60), j = 1:2, align = "left")
 
-# Fix the column widths
-myft = width(myft, j = 1:3, width = 1.5)
-myft = width(myft, j = 4:23, width = 0.5)
+# # # Fix the column widths
+myft = width(myft, j = 1:3, width = 1.25)
+myft = width(myft, j = 4:21, width = 0.5)
 
 # Align title center
 myft = align(myft, align = "center", part = "header")
 
 # Align some data to the left
-myft = align(myft, j = c(5,7,9,11,13,15,17,19,21,23), align = "left", part = "body")
+myft = align(myft, j = c(6, 9, 12, 15, 18, 21), align = "left", part = "body")
+
+# Align some data to the center
+myft = align(myft, j = c(5, 8, 11, 14, 17, 20), align = "center", part = "body")
 
 # Text styling
-myft = style(myft, i = c(1, 2, 14), pr_t = fp_text(color = "black", bold = TRUE), part = "body")
+myft = style(myft, i = c(1, 2, 36), pr_t = fp_text(color = "black", bold = TRUE), part = "body")
 myft = style(myft, pr_t = fp_text(color = "black", bold = TRUE, font.size = 10), part = "header")
 
 # Use to create dynamic header
-set_caption(myft, paste0("Avenue of Payment Impact on ", 
-                         selectedSupplyText, 
-                         ", Number of Observations. and Simple Average"))
+myft = set_caption(myft, paste0("Avenue of Payment Impact on ", 
+                                selectedSupplyText, 
+                                ", Number of Observations. and Simple Average"))
+
+
+tableRowBorders = c(3,5,9,11,13,15,19,21,25,26,29,31,37,
+                    39,43,45,47,49,53,55,59,60,63,65)
+
+myft = hline(myft, i = tableRowBorders, j = 2:21, border = fp_border(color = "black", width = 1))
+
+myft = hline(myft, i = 34,border = fp_border(color = "black", width = 2))
+
+
+
+
+padding(myft, padding.bottom = 75, i = 35)
+
+
+myft
+
+
+
+
+
+
+demo_loop <- system.file(package = "flextable", "examples/rmd", "loop_docx.Rmd")
+rmd_file <- tempfile(fileext = ".Rmd")
+file.copy(demo_loop, to = rmd_file, overwrite = TRUE)
+#> [1] TRUE
+rmd_file # R Markdown document used for demo
+#> [1] "/var/folders/08/2qdvv0q95wn52xy6mxgj340r0000gn/T//RtmpBwTk5k/file10d241e913d76.Rmd"
+if(require("rmarkdown", quietly = TRUE)){
+  render(input = rmd_file, output_format = "word_document", output_file = "loop_docx.docx")
+}
+
+demo_loop <- system.file(package = "flextable", "examples/rmd", "loop_html.Rmd")
+rmd_file <- tempfile(fileext = ".Rmd")
+file.copy(demo_loop, to = rmd_file, overwrite = TRUE)
+#> [1] TRUE
+rmd_file # R Markdown document used for demo
+#> [1] "/var/folders/08/2qdvv0q95wn52xy6mxgj340r0000gn/T//RtmpBwTk5k/file10d24515a1da7.Rmd"
+if(require("rmarkdown", quietly = TRUE)){
+  render(input = rmd_file, output_format = "html_document", output_file = "loop_html.html")
+}
+
+
+
+
+
+
+
+ft1 <- myft
+tf <- tempfile(fileext = ".docx")
+save_as_docx(ft1, path = tf)
+
+
 
