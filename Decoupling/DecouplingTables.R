@@ -104,7 +104,6 @@ tempAvenues = c("PriceEffect_",
                 "RiskReduction_",
                 "RiskAndWealth_",
                 "UpdatingAndExpectations_",
-                "ExemptionsOrExclusions_",
                 "Other_",
                 "All_")
 
@@ -408,6 +407,85 @@ for (i in seq_len(length(subLists))) {
 # Template for loading data into the table
 tableTemplate = read_excel("Decoupling/tableTemplate.xlsx", col_names = TRUE, sheet = 2)
 tableTemplate = as.data.frame(tableTemplate)
+
+
+
+# PC
+# Row 1 
+# PE1 = #obs
+# PE2 = #studies
+# PE3 = median
+
+# Gets the entire sublist
+grep(pattern = "usNat", x = names(subLists))
+
+# Gets the list with corresponding method (PCOPUP or Ratio)
+# switch between PC/R using a paste function
+grep(pattern = "PriceEffect_PCOPUP", x = names(subLists[[1]]))
+
+
+# Gets the rows
+grep(pattern = "usNat", x = tableTemplate$index)
+
+
+# column pattern
+# 1 Price Effect
+# 2 Risk Reduction
+# 3 Risk and Wealth
+# 4 Updating and Expectations
+# 5 Other
+# 6 All
+
+
+# Get appropriate column
+cols1 =  grep(pattern = "1", x = tableTemplate[1, ]) # obs/simple avg
+cols2 =  grep(pattern = "2", x = tableTemplate[1, ]) # study/study weighted avg
+cols3 =  grep(pattern = "3", x = tableTemplate[1, ]) # median/Ai weighted avg
+
+for (name in names(subLists)) {
+  PCOPUPindexes = grep(pattern = "PCOPUP", x = names(subLists[[name]]))
+  PI2MIindexes = grep(pattern = "PI2MI", x = names(subLists[[name]]))
+  
+  length(subLists[[name]][PCOPUPindexes])
+  
+  # Gets the rows for PCOPUP
+  PCOPUProw1 = grep(pattern = name, x = tableTemplate$index)[1]
+  PCOPUProw2 = grep(pattern = name, x = tableTemplate$index)[2]
+  # Gets the rows for PI2MI
+  PI2MIrow1 = grep(pattern = name, x = tableTemplate$index)[3]
+  PI2MIrow2 = grep(pattern = name, x = tableTemplate$index)[4]
+  
+  equalityOfLength = all(sapply(list(length(subLists[[name]][PCOPUPindexes]), length(cols1),
+                                     length(cols2), length(cols3)), function(x) 
+                                       x == length(subLists[[name]][PCOPUPindexes])))
+  
+  if (equalityOfLength) {
+    for (i in seq_len(length(subLists[[name]][PCOPUPindexes]))) {
+      # cell a
+      tableTemplate[PCOPUProw1, cols1[i]] = subLists[[name]][[PCOPUPindexes[i]]]$count
+      # cell b
+      tableTemplate[PCOPUProw1, cols2[i]] = subLists[[name]][[PCOPUPindexes[i]]]$studyCount
+      # cell c
+      tableTemplate[PCOPUProw1, cols3[i]] = round(subLists[[name]][[PCOPUPindexes[i]]]$median, digits = 2)
+      
+      # cell d
+      tableTemplate[PCOPUProw2, cols1[i]] = round(subLists[[name]][[PCOPUPindexes[i]]]$simpleAvg, digits = 2)
+      # cell e
+      tableTemplate[PCOPUProw2, cols2[i]] = round(subLists[[name]][[PCOPUPindexes[i]]]$studyWeightAvg, digits = 2)
+      # cell f
+      tableTemplate[PCOPUProw2, cols3[i]] = "N/A"
+    }
+  } else {
+    stop("Sublist length and column length are not equal. Make sure that any added avenues 
+         for one (either sublist or table) were also added properly to the other.")
+  }
+} 
+
+
+
+
+###############################################################
+
 
 # Dynamic program identifier
 tableTemplate[1, ] = selectedProgramText
