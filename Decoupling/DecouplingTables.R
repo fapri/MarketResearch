@@ -126,25 +126,16 @@ for (i in avenues) {
 }
 
 # Initialize lists
-# Region and Own effect
-usNat = cornBelt = otherRegion = templateList
-# Methods and own effect
-estPS = estMD = simuOrTheory = templateList
-# All and own effect
-all = templateList
-# Nature of effect
-allCrossEffect = allCrops = oneCrop = templateList
-
-subLists = list("usNat" = usNat,
-                "cornBelt" = cornBelt,
-                "otherRegion" = otherRegion,
-                "estPS" = estPS,
-                "estMD" = estMD,
-                "simuOrTheory" = simuOrTheory,
-                "all" = all,
-                "allCrossEffect" = allCrossEffect,
-                "allCrops" = allCrops,
-                "oneCrop" = oneCrop)
+subLists = list("usNat" = templateList,
+                "cornBelt" = templateList,
+                "otherRegion" = templateList,
+                "estPS" = templateList,
+                "estMD" = templateList,
+                "simuOrTheory" = templateList,
+                "all" = templateList,
+                "allCrossEffect" = templateList,
+                "allCrops" = templateList,
+                "oneCrop" = templateList)
 
 # usNat
 # cornBelt
@@ -226,23 +217,8 @@ DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]] =
   replace_na(DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]], 0)
 
 # Get cross effect indexes
-noCrossEffect = 1 - DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]]
-crossEffect = DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]]
-
-
-
-
-# subList = allCrops
-# programId = "allCrops"
-# tableType = selectedSupply
-
-
-
-# i = 1
-# subList = subLists[[i]]
-# programId = names(subLists)[i]
-# tableType = selectedSupply
-
+noCrossEffect = as.numeric(gsub(0, NA, 1 - DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]]))
+crossEffect = as.numeric(gsub(0, NA, DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]]))
 
 # Create sublists of the calculations
 calcLists = function(subList, programId, tableType) {
@@ -362,9 +338,6 @@ for (i in seq_len(length(subLists))) {
   subLists[[i]] = calcLists(subLists[[i]], names(subLists)[i], selectedSupply)
 }
 
-# i = 1
-# subList = subLists[[i]]
-
 # Calculates the number of observations triggered and averages the values
 calcStats = function(subList) {
   for (i in names(subList)) {
@@ -403,30 +376,11 @@ for (i in seq_len(length(subLists))) {
 
 ###############################################################
 
+# load("Decoupling/beforeTable.RData")
 
 # Template for loading data into the table
 tableTemplate = read_excel("Decoupling/tableTemplate.xlsx", col_names = TRUE, sheet = 2)
 tableTemplate = as.data.frame(tableTemplate)
-
-
-
-# PC
-# Row 1 
-# PE1 = #obs
-# PE2 = #studies
-# PE3 = median
-
-# Gets the entire sublist
-grep(pattern = "usNat", x = names(subLists))
-
-# Gets the list with corresponding method (PCOPUP or Ratio)
-# switch between PC/R using a paste function
-grep(pattern = "PriceEffect_PCOPUP", x = names(subLists[[1]]))
-
-
-# Gets the rows
-grep(pattern = "usNat", x = tableTemplate$index)
-
 
 # column pattern
 # 1 Price Effect
@@ -445,35 +399,41 @@ cols3 =  grep(pattern = "3", x = tableTemplate[1, ]) # median/Ai weighted avg
 for (name in names(subLists)) {
   PCOPUPindexes = grep(pattern = "PCOPUP", x = names(subLists[[name]]))
   PI2MIindexes = grep(pattern = "PI2MI", x = names(subLists[[name]]))
-  
-  length(subLists[[name]][PCOPUPindexes])
-  
+
   # Gets the rows for PCOPUP
-  PCOPUProw1 = grep(pattern = name, x = tableTemplate$index)[1]
-  PCOPUProw2 = grep(pattern = name, x = tableTemplate$index)[2]
+  PCOPUProw1 = grep(pattern = paste0(name, 1), x = tableTemplate$index)[1]
+  PCOPUProw2 = grep(pattern = paste0(name, 2), x = tableTemplate$index)[1]
   # Gets the rows for PI2MI
-  PI2MIrow1 = grep(pattern = name, x = tableTemplate$index)[3]
-  PI2MIrow2 = grep(pattern = name, x = tableTemplate$index)[4]
+  PI2MIrow1 = grep(pattern = paste0(name, 1), x = tableTemplate$index)[2]
+  PI2MIrow2 = grep(pattern = paste0(name, 2), x = tableTemplate$index)[2]
   
-  equalityOfLength = all(sapply(list(length(subLists[[name]][PCOPUPindexes]), length(cols1),
-                                     length(cols2), length(cols3)), function(x) 
+  equalityOfLength = all(sapply(list(length(subLists[[name]][PCOPUPindexes]), 
+                                     length(subLists[[name]][PI2MIindexes]),
+                                     length(cols1), length(cols2), 
+                                     length(cols3)), function(x) 
                                        x == length(subLists[[name]][PCOPUPindexes])))
   
   if (equalityOfLength) {
     for (i in seq_len(length(subLists[[name]][PCOPUPindexes]))) {
       # cell a
       tableTemplate[PCOPUProw1, cols1[i]] = subLists[[name]][[PCOPUPindexes[i]]]$count
+      tableTemplate[PI2MIrow1, cols1[i]] = subLists[[name]][[PI2MIindexes[i]]]$count
       # cell b
       tableTemplate[PCOPUProw1, cols2[i]] = subLists[[name]][[PCOPUPindexes[i]]]$studyCount
+      tableTemplate[PI2MIrow1, cols2[i]] = subLists[[name]][[PI2MIindexes[i]]]$studyCount
       # cell c
       tableTemplate[PCOPUProw1, cols3[i]] = round(subLists[[name]][[PCOPUPindexes[i]]]$median, digits = 2)
+      tableTemplate[PI2MIrow1, cols3[i]] = round(subLists[[name]][[PI2MIindexes[i]]]$median, digits = 2)
       
       # cell d
       tableTemplate[PCOPUProw2, cols1[i]] = round(subLists[[name]][[PCOPUPindexes[i]]]$simpleAvg, digits = 2)
+      tableTemplate[PI2MIrow2, cols1[i]] = round(subLists[[name]][[PI2MIindexes[i]]]$simpleAvg, digits = 2)
       # cell e
       tableTemplate[PCOPUProw2, cols2[i]] = round(subLists[[name]][[PCOPUPindexes[i]]]$studyWeightAvg, digits = 2)
+      tableTemplate[PI2MIrow2, cols2[i]] = round(subLists[[name]][[PI2MIindexes[i]]]$studyWeightAvg, digits = 2)
       # cell f
       tableTemplate[PCOPUProw2, cols3[i]] = "N/A"
+      tableTemplate[PI2MIrow2, cols3[i]] = "N/A"
     }
   } else {
     stop("Sublist length and column length are not equal. Make sure that any added avenues 
@@ -483,9 +443,10 @@ for (name in names(subLists)) {
 
 
 
-
 ###############################################################
 
+# Delete column
+tableTemplate = subset(tableTemplate, select = -(index))
 
 # Dynamic program identifier
 tableTemplate[1, ] = selectedProgramText
@@ -562,17 +523,17 @@ myft = set_caption(myft, paste0("Avenue of Payment Impact on ",
                                 ", Number of Observations. and Simple Average"))
 
 
-tableRowBorders = c(3,5,9,11,13,15,19,21,25,26,29,31,37,
-                    39,43,45,47,49,53,55,59,60,63,65)
+tableRowBorders = c(3, 5, 9, 11, 13, 15, 19, 21, 23, 25, 27, 29, 32, 35, 38, 
+                    41, 44, 47, 48, 51, 54, 56, 58, 61, 62, 65, 67)
 
 myft = hline(myft, i = tableRowBorders, j = 2:21, border = fp_border(color = "black", width = 1))
 
-myft = hline(myft, i = 34,border = fp_border(color = "black", width = 2))
+myft = hline(myft, i = 35,border = fp_border(color = "black", width = 2))
 
 
 
 
-padding(myft, padding.bottom = 75, i = 35)
+padding(myft, padding.bottom = 75, i = 36)
 
 
 myft
