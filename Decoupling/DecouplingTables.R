@@ -209,8 +209,6 @@ selectedSupply = switch(selectedSupplyText,
 
 # Extract dummy variable for what type of program is used
 programMaster = DcList[[selectedProgram]]
-# Extract dummy variable for what type of supply is used
-
 
 # Convert NA to 0
 DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]] = 
@@ -291,8 +289,8 @@ calcLists = function(subList, programId, tableType) {
     }
     
     else if (tableType == "yield") {
-      extraFactors = 0
-      crossEffectFactor = 0
+      extraFactors = NA
+      crossEffectFactor = NA
     }
   } 
   
@@ -324,7 +322,7 @@ calcLists = function(subList, programId, tableType) {
     
     subList[[avenue[Relavancy]]][["data"]] = programMaster * extraFactors * crossEffectFactor *
       DcList[[which((sub(".*_", "", names(DcList))) == sub("\\_.*", "", names((subList[i]))))]]
-    subList[[avenue[PCOPUP]]][["data"]] = subList[[avenue[Relavancy]]]$data * DcList[["ImpactOfPayments_PctChangeOutputPerunitPmt"]]
+    subList[[avenue[PCOPUP]]][["data"]] = subList[[avenue[Relavancy]]]$data * (DcList[["ImpactOfPayments_PctChangeOutputPerunitPmt"]] * 100)
     subList[[avenue[PI2MI]]][["data"]] = subList[[avenue[Relavancy]]]$data * DcList[["Ratio_RatioOfPmtImpToMarketImp"]]
 
     subList[[avenue[Relavancy]]]$studyIndex = subList[[avenue[PCOPUP]]]$studyIndex = 
@@ -341,6 +339,8 @@ for (i in seq_len(length(subLists))) {
 # Calculates the number of observations triggered and averages the values
 calcStats = function(subList) {
   for (i in names(subList)) {
+    
+    # TODO check if there are 0 observations but > 0 studies
     subList[[i]]$count = length(which(!is.na(subList[[i]][["data"]])))
     
     subList[[i]]$studyCount = length(unique(na.omit(subList[[i]][["studyIndex"]])))
@@ -376,6 +376,7 @@ for (i in seq_len(length(subLists))) {
 
 ###############################################################
 
+# load("Decoupling/beforeTableV2.RData")
 # load("Decoupling/beforeTable.RData")
 
 # Template for loading data into the table
@@ -390,6 +391,16 @@ tableTemplate = as.data.frame(tableTemplate)
 # 5 Other
 # 6 All
 
+
+nearZero = function(value) {
+  if (is.na(value)) {
+    return(NA)
+  } else if (round(value, digits = 2) == 0) {
+    return("~0")
+  } else {
+    return(round(value, digits = 2))
+  }
+}
 
 # Get appropriate column
 cols1 =  grep(pattern = "1", x = tableTemplate[1, ]) # obs/simple avg
@@ -415,25 +426,36 @@ for (name in names(subLists)) {
   
   if (equalityOfLength) {
     for (i in seq_len(length(subLists[[name]][PCOPUPindexes]))) {
-      # cell a
-      tableTemplate[PCOPUProw1, cols1[i]] = subLists[[name]][[PCOPUPindexes[i]]]$count
-      tableTemplate[PI2MIrow1, cols1[i]] = subLists[[name]][[PI2MIindexes[i]]]$count
-      # cell b
-      tableTemplate[PCOPUProw1, cols2[i]] = subLists[[name]][[PCOPUPindexes[i]]]$studyCount
-      tableTemplate[PI2MIrow1, cols2[i]] = subLists[[name]][[PI2MIindexes[i]]]$studyCount
+
+      if (subLists[[name]][[PCOPUPindexes[i]]]$count == 0 & subLists[[name]][[PCOPUPindexes[i]]]$studyCount == 0) {
+        tableTemplate[PCOPUProw1, cols1[i]] = NA
+        tableTemplate[PCOPUProw1, cols2[i]] = NA
+      } else {
+        tableTemplate[PCOPUProw1, cols1[i]] = subLists[[name]][[PCOPUPindexes[i]]]$count
+        tableTemplate[PCOPUProw1, cols2[i]] = subLists[[name]][[PCOPUPindexes[i]]]$studyCount
+      }
+      
+      if (subLists[[name]][[PI2MIindexes[i]]]$count == 0 & subLists[[name]][[PI2MIindexes[i]]]$studyCount == 0) {
+        tableTemplate[PI2MIrow1, cols1[i]] = NA
+        tableTemplate[PI2MIrow1, cols2[i]] = NA
+      } else {
+        tableTemplate[PI2MIrow1, cols1[i]] = subLists[[name]][[PI2MIindexes[i]]]$count
+        tableTemplate[PI2MIrow1, cols2[i]] = subLists[[name]][[PI2MIindexes[i]]]$studyCount
+      }
+      
       # cell c
-      tableTemplate[PCOPUProw1, cols3[i]] = round(subLists[[name]][[PCOPUPindexes[i]]]$median, digits = 2)
-      tableTemplate[PI2MIrow1, cols3[i]] = round(subLists[[name]][[PI2MIindexes[i]]]$median, digits = 2)
+      tableTemplate[PCOPUProw1, cols3[i]] = nearZero(subLists[[name]][[PCOPUPindexes[i]]]$median)
+      tableTemplate[PI2MIrow1, cols3[i]] = nearZero(subLists[[name]][[PI2MIindexes[i]]]$median)
       
       # cell d
-      tableTemplate[PCOPUProw2, cols1[i]] = round(subLists[[name]][[PCOPUPindexes[i]]]$simpleAvg, digits = 2)
-      tableTemplate[PI2MIrow2, cols1[i]] = round(subLists[[name]][[PI2MIindexes[i]]]$simpleAvg, digits = 2)
+      tableTemplate[PCOPUProw2, cols1[i]] = nearZero(subLists[[name]][[PCOPUPindexes[i]]]$simpleAvg)
+      tableTemplate[PI2MIrow2, cols1[i]] = nearZero(subLists[[name]][[PI2MIindexes[i]]]$simpleAvg)
       # cell e
-      tableTemplate[PCOPUProw2, cols2[i]] = round(subLists[[name]][[PCOPUPindexes[i]]]$studyWeightAvg, digits = 2)
-      tableTemplate[PI2MIrow2, cols2[i]] = round(subLists[[name]][[PI2MIindexes[i]]]$studyWeightAvg, digits = 2)
+      tableTemplate[PCOPUProw2, cols2[i]] = nearZero(subLists[[name]][[PCOPUPindexes[i]]]$studyWeightAvg)
+      tableTemplate[PI2MIrow2, cols2[i]] = nearZero(subLists[[name]][[PI2MIindexes[i]]]$studyWeightAvg)
       # cell f
-      tableTemplate[PCOPUProw2, cols3[i]] = "N/A"
-      tableTemplate[PI2MIrow2, cols3[i]] = "N/A"
+      tableTemplate[PCOPUProw2, cols3[i]] = NA
+      tableTemplate[PI2MIrow2, cols3[i]] = NA
     }
   } else {
     stop("Sublist length and column length are not equal. Make sure that any added avenues 
@@ -449,129 +471,128 @@ for (name in names(subLists)) {
 tableTemplate = subset(tableTemplate, select = -(index))
 
 # Dynamic program identifier
-tableTemplate[1, ] = selectedProgramText
+tableTemplate[c(1, 36), ] = selectedProgramText
 
-# Create the flex table
-myft = flextable(tableTemplate)
-
-# Merge duplicate columns, row-wise
-myft = merge_at(myft, i = 1)
-myft = merge_at(myft, i = 2, j = 1:8)
-myft = merge_at(myft, i = 3, j = 2:3)
-myft = merge_at(myft, i = 13, j = 2:3)
-myft = merge_at(myft, i = 23, j = 2:3)
-myft = merge_at(myft, i = 26, j = 2:3)
-myft = merge_at(myft, i = 36, j = 1:6)
-myft = merge_at(myft, i = 37, j = 2:3)
-myft = merge_at(myft, i = 47, j = 2:3)
-myft = merge_at(myft, i = 57, j = 2:3)
-myft = merge_at(myft, i = 60, j = 2:3)
-myft = merge_v(myft, j = 3)
-
-# Rename columns
-# These cannot be put into the template because the column names would not be unique
-myft = set_header_labels(myft, values = list(V1 = " ",
-                                             V2 = " ",
-                                             V3 = " ",
-                                             V4 = "Price Effect",
-                                             V5 = "Price Effect",
-                                             V6 = "Price Effect",
-                                             V7 = "Risk Reduction",
-                                             V8 = "Risk Reduction",
-                                             V9 = "Risk Reduction",
-                                             V10 = "Risk and Wealth",
-                                             V11 = "Risk and Wealth",
-                                             V12 = "Risk and Wealth",
-                                             V13 = "Updating and Expectations",
-                                             V14 = "Updating and Expectations",
-                                             V15 = "Updating and Expectations",
-                                             V16 = "Other",
-                                             V17 = "Other",
-                                             V18 = "Other",
-                                             V19 = "All",
-                                             V20 = "All",
-                                             V21 = "All"))
-
-# myft = border_inner(myft, border = fp_border(color = "black", width = 1))
-
-# Merge duplicate columns in the header
-myft = merge_h(myft, part = "header")
-
-# Align some rows to the left
-myft = align(myft, i = c(1, 2, 3, 13, 23, 26, 36,37, 47, 57, 60), j = 1:2, align = "left")
-
-# # # Fix the column widths
-myft = width(myft, j = 1:3, width = 1.25)
-myft = width(myft, j = 4:21, width = 0.5)
-
-# Align title center
-myft = align(myft, align = "center", part = "header")
-
-# Align some data to the left
-myft = align(myft, j = c(6, 9, 12, 15, 18, 21), align = "left", part = "body")
-
-# Align some data to the center
-myft = align(myft, j = c(5, 8, 11, 14, 17, 20), align = "center", part = "body")
-
-# Text styling
-myft = style(myft, i = c(1, 2, 36), pr_t = fp_text(color = "black", bold = TRUE), part = "body")
-myft = style(myft, pr_t = fp_text(color = "black", bold = TRUE, font.size = 10), part = "header")
-
-# Use to create dynamic header
-myft = set_caption(myft, paste0("Avenue of Payment Impact on ", 
-                                selectedSupplyText, 
-                                ", Number of Observations. and Simple Average"))
-
-
-tableRowBorders = c(3, 5, 9, 11, 13, 15, 19, 21, 23, 25, 27, 29, 32, 35, 38, 
-                    41, 44, 47, 48, 51, 54, 56, 58, 61, 62, 65, 67)
-
-myft = hline(myft, i = tableRowBorders, j = 2:21, border = fp_border(color = "black", width = 1))
-
-myft = hline(myft, i = 35,border = fp_border(color = "black", width = 2))
-
-
-
-
-padding(myft, padding.bottom = 75, i = 36)
-
-
-myft
-
-
-
-
-
-
-demo_loop <- system.file(package = "flextable", "examples/rmd", "loop_docx.Rmd")
-rmd_file <- tempfile(fileext = ".Rmd")
-file.copy(demo_loop, to = rmd_file, overwrite = TRUE)
-#> [1] TRUE
-rmd_file # R Markdown document used for demo
-#> [1] "/var/folders/08/2qdvv0q95wn52xy6mxgj340r0000gn/T//RtmpBwTk5k/file10d241e913d76.Rmd"
-if(require("rmarkdown", quietly = TRUE)){
-  render(input = rmd_file, output_format = "word_document", output_file = "loop_docx.docx")
-}
-
-demo_loop <- system.file(package = "flextable", "examples/rmd", "loop_html.Rmd")
-rmd_file <- tempfile(fileext = ".Rmd")
-file.copy(demo_loop, to = rmd_file, overwrite = TRUE)
-#> [1] TRUE
-rmd_file # R Markdown document used for demo
-#> [1] "/var/folders/08/2qdvv0q95wn52xy6mxgj340r0000gn/T//RtmpBwTk5k/file10d24515a1da7.Rmd"
-if(require("rmarkdown", quietly = TRUE)){
-  render(input = rmd_file, output_format = "html_document", output_file = "loop_html.html")
+# Function to create and format the flex tables
+makeTables = function(myft) {
+  # Merge duplicate columns, row-wise
+  myft = merge_at(myft, i = 1)
+  myft = merge_at(myft, i = 2, j = 1:8)
+  myft = merge_at(myft, i = 3, j = 2:3)
+  myft = merge_at(myft, i = 13, j = 2:3)
+  myft = merge_at(myft, i = 23, j = 2:3)
+  myft = merge_at(myft, i = 26, j = 2:3)
+  myft = merge_v(myft, j = 3)
+  
+  # Rename columns
+  # These cannot be put into the template because the column names would not be unique
+  myft = set_header_labels(myft, values = list(V1 = " ",
+                                               V2 = " ",
+                                               V3 = " ",
+                                               V4 = "Price Effect",
+                                               V5 = "Price Effect",
+                                               V6 = "Price Effect",
+                                               V7 = "Risk Reduction",
+                                               V8 = "Risk Reduction",
+                                               V9 = "Risk Reduction",
+                                               V10 = "Risk and Wealth",
+                                               V11 = "Risk and Wealth",
+                                               V12 = "Risk and Wealth",
+                                               V13 = "Updating and Expectations",
+                                               V14 = "Updating and Expectations",
+                                               V15 = "Updating and Expectations",
+                                               V16 = "Other",
+                                               V17 = "Other",
+                                               V18 = "Other",
+                                               V19 = "All",
+                                               V20 = "All",
+                                               V21 = "All"))
+  
+  # myft = border_inner(myft, border = fp_border(color = "black", width = 1))
+  
+  # Merge duplicate columns in the header
+  myft = merge_h(myft, part = "header")
+  
+  # Align some rows to the left
+  myft = align(myft, i = c(1, 2, 3, 13, 23, 26), j = 1:2, align = "left")
+  
+  # # # Fix the column widths
+  myft = width(myft, j = 1:3, width = 1.25)
+  myft = width(myft, j = 4:21, width = 0.60)
+  
+  # Align title center
+  myft = align(myft, align = "center", part = "header")
+  
+  # Align some data to the left
+  myft = align(myft, j = c(6, 9, 12, 15, 18, 21), align = "left", part = "body")
+  
+  # Align some data to the center
+  myft = align(myft, j = c(5, 8, 11, 14, 17, 20), align = "center", part = "body")
+  
+  # Text styling
+  myft = style(myft, i = c(1, 2), pr_t = fp_text(color = "black", bold = TRUE), part = "body")
+  myft = style(myft, pr_t = fp_text(color = "black", bold = TRUE, font.size = 10), part = "header")
+  
+  # Use to create dynamic header
+  myft = set_caption(myft, paste0("Avenue of Payment Impact on ", 
+                                  selectedSupplyText, 
+                                  ", Number of Observations. and Simple Average"))
+  
+  
+  tableRowBorders = c(3, 5, 9, 11, 13, 15, 19, 21, 23, 25, 27, 29, 32, 35)
+  
+  myft = hline(myft, i = tableRowBorders, j = 2:21, border = fp_border(color = "black", width = 1))
+  
+  myft = hline(myft, i = 34, j = 3, border = fp_border(color = "black", width = 2))
+  myft = hline(myft, i = 35, border = fp_border(color = "black", width = 2))
+  
+  return(myft)
 }
 
 
+tablePCOPUP = makeTables(flextable(tableTemplate[1:35,]))
+tablePI2MI = makeTables(flextable(tableTemplate[36:70,]))
+
+
+
+
+# ft <- myft
+# tf <- tempfile(fileext = ".html")
+# save_as_html(ft, tf)
 
 
 
 
 
-ft1 <- myft
-tf <- tempfile(fileext = ".docx")
-save_as_docx(ft1, path = tf)
+# demo_loop <- system.file(package = "flextable", "examples/rmd", "loop_docx.Rmd")
+# rmd_file <- tempfile(fileext = ".Rmd")
+# file.copy(demo_loop, to = rmd_file, overwrite = TRUE)
+# #> [1] TRUE
+# rmd_file # R Markdown document used for demo
+# #> [1] "/var/folders/08/2qdvv0q95wn52xy6mxgj340r0000gn/T//RtmpBwTk5k/file10d241e913d76.Rmd"
+# if(require("rmarkdown", quietly = TRUE)){
+#   render(input = rmd_file, output_format = "word_document", output_file = "loop_docx.docx")
+# }
+# 
+# demo_loop <- system.file(package = "flextable", "examples/rmd", "loop_html.Rmd")
+# rmd_file <- tempfile(fileext = ".Rmd")
+# file.copy(demo_loop, to = rmd_file, overwrite = TRUE)
+# #> [1] TRUE
+# rmd_file # R Markdown document used for demo
+# #> [1] "/var/folders/08/2qdvv0q95wn52xy6mxgj340r0000gn/T//RtmpBwTk5k/file10d24515a1da7.Rmd"
+# if(require("rmarkdown", quietly = TRUE)){
+#   render(input = rmd_file, output_format = "html_document", output_file = "loop_html.html")
+# }
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# ft1 <- myft
+# tf <- tempfile(fileext = ".docx")
+# save_as_docx(ft1, path = tf)
 
 
 
