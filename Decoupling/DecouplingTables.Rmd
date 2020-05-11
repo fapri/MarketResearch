@@ -1,0 +1,25 @@
+---
+title: "Decoupling Tables"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(flextable)
+# Run program logic
+source("DecouplingTables.R")
+```
+
+
+
+
+```{r, echo = FALSE, results = 'asis'}
+
+tablePCOPUP
+cat("\n\n\\pagebreak\n")
+tablePI2MI
+
+```
+
+
+
