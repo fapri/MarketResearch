@@ -14,9 +14,12 @@ library(flextable)
 library(officer)
 library(tidyverse)
 
-# Load data
-DcData = read_excel("Decoupling/DecouplingLitDataNew.xlsx", 
+# Load data from markdown file
+DcData = read_excel("DecouplingLitDataNew.xlsx", 
                     col_names = FALSE)
+# # From R file
+# DcData = read_excel("Decoupling/DecouplingLitDataNew.xlsx", 
+#                     col_names = FALSE)
 
 # Renumber columns
 colnames(DcData) = paste0("c", seq(from = 1, to = ncol(DcData), by = 1))
@@ -149,6 +152,8 @@ subLists = list("usNat" = templateList,
 # oneCrop
 
 ###############################################################
+
+# TODO Add option to run ALL possible combinations
 
 # Set program choices for user
 programChoices = c("All during period",
@@ -340,9 +345,7 @@ for (i in seq_len(length(subLists))) {
 calcStats = function(subList) {
   for (i in names(subList)) {
     
-    # TODO check if there are 0 observations but > 0 studies
     subList[[i]]$count = length(which(!is.na(subList[[i]][["data"]])))
-    
     subList[[i]]$studyCount = length(unique(na.omit(subList[[i]][["studyIndex"]])))
     
     if (subList[[i]]$count > 0) {
@@ -359,6 +362,11 @@ calcStats = function(subList) {
       subList[[i]]$studyAiWeightAvg = NA
       
     } else {
+      # Ensure case where there are studies available but no data
+      # do not get included in the table
+      subList[[i]]$count = 0
+      subList[[i]]$studyCount = 0
+      
       subList[[i]]$simpleAvg = NA
       subList[[i]]$median = NA
       subList[[i]]$studyWeightAvg = NA
@@ -376,11 +384,13 @@ for (i in seq_len(length(subLists))) {
 
 ###############################################################
 
+# load("Decoupling/beforeTableV3.RData")
 # load("Decoupling/beforeTableV2.RData")
 # load("Decoupling/beforeTable.RData")
 
 # Template for loading data into the table
-tableTemplate = read_excel("Decoupling/tableTemplate.xlsx", col_names = TRUE, sheet = 2)
+# tableTemplate = read_excel("Decoupling/tableTemplate.xlsx", col_names = TRUE, sheet = 2)
+tableTemplate = read_excel("tableTemplate.xlsx", col_names = TRUE, sheet = 2)
 tableTemplate = as.data.frame(tableTemplate)
 
 # column pattern
@@ -549,50 +559,9 @@ makeTables = function(myft) {
   return(myft)
 }
 
-
 tablePCOPUP = makeTables(flextable(tableTemplate[1:35,]))
 tablePI2MI = makeTables(flextable(tableTemplate[36:70,]))
 
-
-
-
-# ft <- myft
-# tf <- tempfile(fileext = ".html")
-# save_as_html(ft, tf)
-
-
-
-
-
-# demo_loop <- system.file(package = "flextable", "examples/rmd", "loop_docx.Rmd")
-# rmd_file <- tempfile(fileext = ".Rmd")
-# file.copy(demo_loop, to = rmd_file, overwrite = TRUE)
-# #> [1] TRUE
-# rmd_file # R Markdown document used for demo
-# #> [1] "/var/folders/08/2qdvv0q95wn52xy6mxgj340r0000gn/T//RtmpBwTk5k/file10d241e913d76.Rmd"
-# if(require("rmarkdown", quietly = TRUE)){
-#   render(input = rmd_file, output_format = "word_document", output_file = "loop_docx.docx")
-# }
-# 
-# demo_loop <- system.file(package = "flextable", "examples/rmd", "loop_html.Rmd")
-# rmd_file <- tempfile(fileext = ".Rmd")
-# file.copy(demo_loop, to = rmd_file, overwrite = TRUE)
-# #> [1] TRUE
-# rmd_file # R Markdown document used for demo
-# #> [1] "/var/folders/08/2qdvv0q95wn52xy6mxgj340r0000gn/T//RtmpBwTk5k/file10d24515a1da7.Rmd"
-# if(require("rmarkdown", quietly = TRUE)){
-#   render(input = rmd_file, output_format = "html_document", output_file = "loop_html.html")
-# }
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# ft1 <- myft
-# tf <- tempfile(fileext = ".docx")
-# save_as_docx(ft1, path = tf)
 
 
 
