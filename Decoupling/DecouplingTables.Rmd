@@ -1,16 +1,55 @@
 ---
-title: "Decoupling Tables"
 output: html_document
+
+params:
+  program:
+    label: "Program Type:"
+    value: All during period
+    input: select
+    choices: [All during period,
+              Crop insurance,
+              ARC,
+              PLC,
+              SCO,
+              CCP,
+              ACRE,
+              Market loss assistance,
+              Fixed direct payment (contract payment),
+              Marketing Loan program,
+              Milk Income Loss Contract (MILC),
+              Margin Protection Program,
+              Pre-1996 US policy,
+              Other]
+  supply:
+    label: "Supply Type:"
+    value: Area of a Crop or Crops
+    input: select
+    choices: [Area of a Crop or Crops,
+              Yield,
+              Production of a Crop or Crops]
 ---
 
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-library(flextable)
-# Run program logic
-source("DecouplingTables.R")
+<style>
+.main-container {
+    max-width: 940px;
+    margin-left: 0;
+    margin-right: auto;
+}
+</style>
+
+```{r, echo = FALSE}
+
+selectedProgramText = params$program
+selectedSupplyText = params$supply
+
 ```
 
 
+```{r, include = FALSE}
+
+source("DecouplingTables.R")
+
+```
 
 
 ```{r, echo = FALSE, results = 'asis'}

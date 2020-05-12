@@ -153,42 +153,42 @@ subLists = list("usNat" = templateList,
 
 ###############################################################
 
-# TODO Add option to run ALL possible combinations
 
-# Set program choices for user
-programChoices = c("All during period",
-                   "Crop insurance",
-                   "ARC",
-                   "PLC",
-                   "SCO",
-                   "CCP",
-                   "ACRE",
-                   "Market loss assistance",
-                   "Fixed direct payment (contract payment)",
-                   "Marketing Loan program",
-                   "Milk Income Loss Contract (MILC)",
-                   "Margin Protection Program",
-                   "Pre-1996 US policy",
-                   "Other"
-)
-
-# Set supply choices for user
-supplyChoices = c("Area of a Crop or Crops",
-                  "Yield",
-                  "Production of a Crop or Crops")
-
+ 
+# # Set program choices for user
+# programChoices = c("All during period",
+#                    "Crop insurance",
+#                    "ARC",
+#                    "PLC",
+#                    "SCO",
+#                    "CCP",
+#                    "ACRE",
+#                    "Market loss assistance",
+#                    "Fixed direct payment (contract payment)",
+#                    "Marketing Loan program",
+#                    "Milk Income Loss Contract (MILC)",
+#                    "Margin Protection Program",
+#                    "Pre-1996 US policy",
+#                    "Other"
+# )
+# 
+# # Set supply choices for user
+# supplyChoices = c("Area of a Crop or Crops",
+#                   "Yield",
+#                   "Production of a Crop or Crops")
+# 
 # # Dialogue boxes for user input
 # selectedProgramText = dlgList(programChoices, preselect = NULL, multiple = FALSE,
 #                           title = "Program Type")$res
-selectedProgramText = "Fixed direct payment (contract payment)"
-
+# # selectedProgramText = "Fixed direct payment (contract payment)"
+# 
 # # Dialogue boxes for user input
 # selectedSupplyText = dlgList(supplyChoices, preselect = NULL, multiple = FALSE,
 #                          title = "Supply Type")$res
-selectedSupplyText = "Area of a Crop or Crops"
+# # selectedSupplyText = "Area of a Crop or Crops"
 
 # Convert user selection to list key name for access by name
-selectedProgram = switch(selectedProgramText, 
+selectedProgram = switch(selectedProgramText,
                          "All during period" = "Program_AllDuringPeriod",
                          "Crop insurance" = "Program_CropInsurance",
                          "ARC" = "Program_AgriculturalRiskCoverage",
@@ -206,7 +206,7 @@ selectedProgram = switch(selectedProgramText,
 )
 
 # Convert user selection to list key name for access by name
-selectedSupply = switch(selectedSupplyText, 
+selectedSupply = switch(selectedSupplyText,
                         "Area of a Crop or Crops" = "area",
                         "Yield" = "yield",
                         "Production of a Crop or Crops" = "production"
@@ -384,9 +384,6 @@ for (i in seq_len(length(subLists))) {
 
 ###############################################################
 
-# load("Decoupling/beforeTableV3.RData")
-# load("Decoupling/beforeTableV2.RData")
-# load("Decoupling/beforeTable.RData")
 
 # Template for loading data into the table
 # tableTemplate = read_excel("Decoupling/tableTemplate.xlsx", col_names = TRUE, sheet = 2)
@@ -545,8 +542,7 @@ makeTables = function(myft) {
   
   # Use to create dynamic header
   myft = set_caption(myft, paste0("Avenue of Payment Impact on ", 
-                                  selectedSupplyText, 
-                                  ", Number of Observations. and Simple Average"))
+                                  selectedSupplyText))
   
   
   tableRowBorders = c(3, 5, 9, 11, 13, 15, 19, 21, 23, 25, 27, 29, 32, 35)
@@ -561,6 +557,13 @@ makeTables = function(myft) {
 
 tablePCOPUP = makeTables(flextable(tableTemplate[1:35,]))
 tablePI2MI = makeTables(flextable(tableTemplate[36:70,]))
+
+
+
+
+
+
+
 
 
 
