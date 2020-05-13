@@ -386,8 +386,8 @@ for (i in seq_len(length(subLists))) {
 
 
 # Template for loading data into the table
-# tableTemplate = read_excel("Decoupling/tableTemplate.xlsx", col_names = TRUE, sheet = 2)
-tableTemplate = read_excel("tableTemplate.xlsx", col_names = TRUE, sheet = 2)
+# tableTemplate = read_excel("Decoupling/tableTemplate.xlsx", col_names = TRUE, sheet = 1)
+tableTemplate = read_excel("tableTemplate.xlsx", col_names = TRUE, sheet = 1)
 tableTemplate = as.data.frame(tableTemplate)
 
 # column pattern

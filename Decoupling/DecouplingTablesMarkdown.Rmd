@@ -34,7 +34,14 @@ params:
     max-width: 940px;
     margin-left: 0;
     margin-right: auto;
+    color: black;
 }
+
+caption {
+color: black;
+font-weight: bold;
+}
+
 </style>
 
 ```{r, echo = FALSE}
