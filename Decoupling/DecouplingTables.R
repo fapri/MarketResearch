@@ -18,7 +18,7 @@ library(tidyverse)
 DcData = read_excel("DecouplingLitDataNew.xlsx", 
                     col_names = FALSE)
 # # From R file
-# DcData = read_excel("Decoupling/DecouplingLitDataNew.xlsx", 
+# DcData = read_excel("Decoupling/DecouplingLitDataNew.xlsx",
 #                     col_names = FALSE)
 
 # Renumber columns
@@ -29,7 +29,9 @@ DcData = DcData[rowSums(is.na(DcData)) != ncol(DcData),]
 
 # Carry "notes" titles down to rows with notes
 for (row in 1:(nrow(DcData) - 1)) {
-  if (length(grep("Notes", DcData$c2[row])) > 0 & is.na(DcData$c1[row + 1]) & is.na(DcData$c2[row + 1])) {
+  if (length(grep("Notes", DcData$c2[row])) > 0 & 
+      is.na(DcData$c1[row + 1]) & 
+      is.na(DcData$c2[row + 1])) {
     DcData$c2[row + 1] = "Notes"
   }
 }
@@ -58,7 +60,7 @@ DcData$c2 = gsub("\\s*\\([^\\)]+\\)","", as.character(DcData$c2))
 DcData$c1 = gsub("[[:punct:]]+","", DcData$c1)
 DcData$c2 = gsub("[[:punct:]]+","", DcData$c2)
 
-# formatting/standardizing
+# formatting/standardizing the text
 DcData$c1 = str_to_title(DcData$c1)
 DcData$c2 = str_to_title(DcData$c2)
 DcData$c1 = gsub(" ", "", DcData$c1)
@@ -84,14 +86,16 @@ DcData$c2[grep("RatioOfPaymentImpactToMarketImpact", DcData$c2)] = "RatioOfPmtIm
 DcData$c3 = paste(DcData$c1, DcData$c2, sep = "_")
 
 # Convert the data to a list for key/value access
-tDf = t(DcData)
-colnames(tDf) = row.names(tDf) = NULL
+tDcData = t(DcData)
+colnames(tDcData) = row.names(tDcData) = NULL
 
 # Converts each data frame row into a list
 # This is helpful for being able to call the variables by 
 # their key, rather than col/row notation
-DcList = lapply(seq_len(ncol(tDf[4:nrow(tDf), ])), function(i) tDf[4:nrow(tDf), ][,i])
-names(DcList) = tDf[3, ]
+DcList = lapply(seq_len(ncol(tDcData[4:nrow(tDcData), ])), function(i) {
+  tDcData[4:nrow(tDcData), ][,i]
+  })
+names(DcList) = tDcData[3, ]
 
 # Convert to numeric where applicable
 DcList = lapply(DcList, function(col) {
@@ -115,7 +119,7 @@ factors = c("Relavancy",
             "PCOPUP",
             "PI2MI")
 
-# match each avenue to all factors
+# Match each avenue to all factors
 avenues = vector()
 for (i in seq(length(tempAvenues))) {
   avenues = c(avenues, paste0(tempAvenues[i], factors))
@@ -140,21 +144,9 @@ subLists = list("usNat" = templateList,
                 "allCrops" = templateList,
                 "oneCrop" = templateList)
 
-# usNat
-# cornBelt
-# otherRegion
-# estPS
-# estMD
-# simuOrTheory
-# all
-# allCrossEffect
-# allCrops
-# oneCrop
+####################### CALCULATIONS #######################
 
-###############################################################
-
-
- 
+# # Needed if you run the R code outside of the rmarkdown
 # # Set program choices for user
 # programChoices = c("All during period",
 #                    "Crop insurance",
@@ -283,6 +275,7 @@ calcLists = function(subList, programId, tableType) {
   
   # Effect: all crops
   else if (programId == "allCrops") {
+    # What supply gets displayed depends on the type of table
     if (tableType == "area") {
       extraFactors = DcList[["NatureOfSupply_AreaOfAllOrManyCrops"]]
       crossEffectFactor = 1
@@ -293,6 +286,7 @@ calcLists = function(subList, programId, tableType) {
       crossEffectFactor = 1
     }
     
+    # Yield for all crops is never considered and always NA
     else if (tableType == "yield") {
       extraFactors = NA
       crossEffectFactor = NA
@@ -301,6 +295,7 @@ calcLists = function(subList, programId, tableType) {
   
   # Effect: one crop
   else if (programId == "oneCrop") {
+    # What supply gets displayed depends on the type of table
     if (tableType == "area") {
       extraFactors = DcList[["NatureOfSupply_AreaOfACrop"]]
       crossEffectFactor = 1
@@ -319,17 +314,24 @@ calcLists = function(subList, programId, tableType) {
   
   # Pull relavancy and apply it to the PCOPUP and PI2MI data
   for (i in grep("Relavancy", names((subList)))) {
+    # Identify the avenue type for the index
     avenue = which((sub("\\_.*", "", names(subList))) == sub("\\_.*", "", names((subList[i]))))
     
+    # Isolate the list index of each factor from the selected avenue
     Relavancy = grep("Relavancy", names(subList[avenue]))
     PCOPUP = grep("PCOPUP", names(subList[avenue]))
     PI2MI = grep("PI2MI", names(subList[avenue]))
     
+    # Determines which indexes should be included in the calculations
+    # These are based on the premise that NA * 1 = NA and NA * 0 = NA
     subList[[avenue[Relavancy]]][["data"]] = programMaster * extraFactors * crossEffectFactor *
       DcList[[which((sub(".*_", "", names(DcList))) == sub("\\_.*", "", names((subList[i]))))]]
+    
+    # Extracts the PCOPUP and PI2MI values only for relevant indexes
     subList[[avenue[PCOPUP]]][["data"]] = subList[[avenue[Relavancy]]]$data * (DcList[["ImpactOfPayments_PctChangeOutputPerunitPmt"]] * 100)
     subList[[avenue[PI2MI]]][["data"]] = subList[[avenue[Relavancy]]]$data * DcList[["Ratio_RatioOfPmtImpToMarketImp"]]
 
+    # Extracts the study number only for relevant indexes
     subList[[avenue[Relavancy]]]$studyIndex = subList[[avenue[PCOPUP]]]$studyIndex = 
       subList[[avenue[PI2MI]]]$studyIndex = subList[[avenue[Relavancy]]]$data * DcList[["Study_NA"]]
   }
@@ -345,13 +347,16 @@ for (i in seq_len(length(subLists))) {
 calcStats = function(subList) {
   for (i in names(subList)) {
     
+    # Calculate number of observations and number of studies
     subList[[i]]$count = length(which(!is.na(subList[[i]][["data"]])))
     subList[[i]]$studyCount = length(unique(na.omit(subList[[i]][["studyIndex"]])))
     
     if (subList[[i]]$count > 0) {
+      # Calculate mean and median
       subList[[i]]$simpleAvg = mean(subList[[i]][["data"]], na.rm = TRUE)
       subList[[i]]$median = median(subList[[i]][["data"]], na.rm = TRUE)
       
+      # Calculate study weighted average
       subList[[i]]$studyWeightAvg = na.omit(data.frame("index" = subList[[i]][["studyIndex"]], 
                                                        "data" = subList[[i]][["data"]])) %>% 
         group_by(index) %>% 
@@ -381,24 +386,14 @@ for (i in seq_len(length(subLists))) {
   subLists[[i]] = calcStats(subLists[[i]])
 }
 
-
-###############################################################
-
+####################### TABLE LOADING #######################
 
 # Template for loading data into the table
 # tableTemplate = read_excel("Decoupling/tableTemplate.xlsx", col_names = TRUE, sheet = 1)
 tableTemplate = read_excel("tableTemplate.xlsx", col_names = TRUE, sheet = 1)
 tableTemplate = as.data.frame(tableTemplate)
 
-# column pattern
-# 1 Price Effect
-# 2 Risk Reduction
-# 3 Risk and Wealth
-# 4 Updating and Expectations
-# 5 Other
-# 6 All
-
-
+# Function to replace values that round to zero with ~0
 nearZero = function(value) {
   if (is.na(value)) {
     return(NA)
@@ -409,12 +404,13 @@ nearZero = function(value) {
   }
 }
 
-# Get appropriate column
+# Get appropriate columns
 cols1 =  grep(pattern = "1", x = tableTemplate[1, ]) # obs/simple avg
 cols2 =  grep(pattern = "2", x = tableTemplate[1, ]) # study/study weighted avg
 cols3 =  grep(pattern = "3", x = tableTemplate[1, ]) # median/Ai weighted avg
 
 for (name in names(subLists)) {
+  # Get list indexes for PCOPUP and PI2MI
   PCOPUPindexes = grep(pattern = "PCOPUP", x = names(subLists[[name]]))
   PI2MIindexes = grep(pattern = "PI2MI", x = names(subLists[[name]]))
 
@@ -425,6 +421,8 @@ for (name in names(subLists)) {
   PI2MIrow1 = grep(pattern = paste0(name, 1), x = tableTemplate$index)[2]
   PI2MIrow2 = grep(pattern = paste0(name, 2), x = tableTemplate$index)[2]
   
+  # Ensure that all variables have the same length
+  # This is an okay check, but other errors can still slip through it
   equalityOfLength = all(sapply(list(length(subLists[[name]][PCOPUPindexes]), 
                                      length(subLists[[name]][PI2MIindexes]),
                                      length(cols1), length(cols2), 
@@ -434,6 +432,7 @@ for (name in names(subLists)) {
   if (equalityOfLength) {
     for (i in seq_len(length(subLists[[name]][PCOPUPindexes]))) {
 
+      # Load cells a and b for PCOPUP
       if (subLists[[name]][[PCOPUPindexes[i]]]$count == 0 & subLists[[name]][[PCOPUPindexes[i]]]$studyCount == 0) {
         tableTemplate[PCOPUProw1, cols1[i]] = NA
         tableTemplate[PCOPUProw1, cols2[i]] = NA
@@ -442,6 +441,7 @@ for (name in names(subLists)) {
         tableTemplate[PCOPUProw1, cols2[i]] = subLists[[name]][[PCOPUPindexes[i]]]$studyCount
       }
       
+      # Load cells a and b for PI2MI
       if (subLists[[name]][[PI2MIindexes[i]]]$count == 0 & subLists[[name]][[PI2MIindexes[i]]]$studyCount == 0) {
         tableTemplate[PI2MIrow1, cols1[i]] = NA
         tableTemplate[PI2MIrow1, cols2[i]] = NA
@@ -450,17 +450,17 @@ for (name in names(subLists)) {
         tableTemplate[PI2MIrow1, cols2[i]] = subLists[[name]][[PI2MIindexes[i]]]$studyCount
       }
       
-      # cell c
+      # Load cell c
       tableTemplate[PCOPUProw1, cols3[i]] = nearZero(subLists[[name]][[PCOPUPindexes[i]]]$median)
       tableTemplate[PI2MIrow1, cols3[i]] = nearZero(subLists[[name]][[PI2MIindexes[i]]]$median)
       
-      # cell d
+      # Load cell d
       tableTemplate[PCOPUProw2, cols1[i]] = nearZero(subLists[[name]][[PCOPUPindexes[i]]]$simpleAvg)
       tableTemplate[PI2MIrow2, cols1[i]] = nearZero(subLists[[name]][[PI2MIindexes[i]]]$simpleAvg)
-      # cell e
+      # Load cell e
       tableTemplate[PCOPUProw2, cols2[i]] = nearZero(subLists[[name]][[PCOPUPindexes[i]]]$studyWeightAvg)
       tableTemplate[PI2MIrow2, cols2[i]] = nearZero(subLists[[name]][[PI2MIindexes[i]]]$studyWeightAvg)
-      # cell f
+      # Load cell f
       tableTemplate[PCOPUProw2, cols3[i]] = NA
       tableTemplate[PI2MIrow2, cols3[i]] = NA
     }
@@ -470,11 +470,9 @@ for (name in names(subLists)) {
   }
 } 
 
+####################### TABLE PRINTING ####################### 
 
-
-###############################################################
-
-# Delete column
+# Delete index column
 tableTemplate = subset(tableTemplate, select = -(index))
 
 # Dynamic program identifier
@@ -514,9 +512,7 @@ makeTables = function(myft) {
                                                V19 = "All",
                                                V20 = "All",
                                                V21 = "All"))
-  
-  # myft = border_inner(myft, border = fp_border(color = "black", width = 1))
-  
+
   # Merge duplicate columns in the header
   myft = merge_h(myft, part = "header")
   
@@ -555,16 +551,7 @@ makeTables = function(myft) {
   return(myft)
 }
 
+# Make and store tables separately
 tablePCOPUP = makeTables(flextable(tableTemplate[1:35,]))
 tablePI2MI = makeTables(flextable(tableTemplate[36:70,]))
-
-
-
-
-
-
-
-
-
-
 

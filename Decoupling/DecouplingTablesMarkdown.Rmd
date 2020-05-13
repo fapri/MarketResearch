@@ -46,6 +46,7 @@ font-weight: bold;
 
 ```{r, echo = FALSE}
 
+# Extract user input to defined variables
 selectedProgramText = params$program
 selectedSupplyText = params$supply
 
@@ -54,6 +55,7 @@ selectedSupplyText = params$supply
 
 ```{r, include = FALSE}
 
+# Run the program
 source("DecouplingTables.R")
 
 ```
@@ -61,6 +63,7 @@ source("DecouplingTables.R")
 
 ```{r, echo = FALSE, results = 'asis'}
 
+# Print the tables
 tablePCOPUP
 cat("\n\n\\pagebreak\n")
 tablePI2MI
