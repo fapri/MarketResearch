@@ -12,8 +12,8 @@ library(plotly)
 library(scales)
 
 # Load data
-cornBasis = read_csv("Data/cornBasis.csv")
-soybeanBasis = read_csv("Data/soybeanBasis.csv")
+cornBasis = read_csv("https://raw.githubusercontent.com/fapri/MarketResearch/project/Decoupling/Basis/basisCharting/basisCharting/Data/cornBasis.csv")
+soybeanBasis = read_csv("https://raw.githubusercontent.com/fapri/MarketResearch/project/Decoupling/Basis/basisCharting/basisCharting/Data/soybeanBasis.csv")
 
 # Convert dates to date type
 cornBasis$date = mdy(cornBasis$date)
