@@ -1,0 +1,12 @@
+name: basisCharting
+title: basisCharting
+username:
+account: escully
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3097975
+bundleId: 3784043
+url: https://escully.shinyapps.io/basisCharting/
+when: 1603727897.52356
+asMultiple: FALSE
+asStatic: FALSE
