@@ -14,27 +14,38 @@ library(scales)
 # Load data
 cornBasis = read_csv("https://raw.githubusercontent.com/fapri/MarketResearch/project/Decoupling/Basis/basisCharting/Data/cornBasis.csv")
 soybeanBasis = read_csv("https://raw.githubusercontent.com/fapri/MarketResearch/project/Decoupling/Basis/basisCharting/Data/soybeanBasis.csv")
+marketingYears = read_csv("Data/marketingYears.csv")
 
 # Convert dates to date type
 cornBasis$date = mdy(cornBasis$date)
 soybeanBasis$date = mdy(soybeanBasis$date)
+marketingYears$Start = mdy(marketingYears$Start)
+marketingYears$Stop = mdy(marketingYears$Stop)
 
 # Create city and terminal name merged variable
 cornBasis$cityTermName = paste(cornBasis$city, cornBasis$terminalName, sep = ", ")
 soybeanBasis$cityTermName = paste(soybeanBasis$city, soybeanBasis$terminalName, sep = ", ")
 
+
+marketingYears$interval = interval(marketingYears$Start, marketingYears$Stop)
+
+
+
+
+
+
 # Initialize years available to select
-years = c("2010",
-          "2011",
-          "2012",
-          "2013",
-          "2014",
-          "2015",
-          "2016",
-          "2017",
-          "2018",
-          "2019",
-          "2020")
+years = c("2010-11",
+          "2011-12",
+          "2012-13",
+          "2013-14",
+          "2014-15",
+          "2015-16",
+          "2016-17",
+          "2017-18",
+          "2018-19",
+          "2019-20",
+          "2020-21")
 
 # get corn and soybean terminals individually for dynamic lists
 cornTerminals = sort(unique(cornBasis$cityTermName))
@@ -91,35 +102,50 @@ shinyApp(
         # Dynamic year selection
         yearInput <- reactive({
             switch(input$year,
-                   "2010" = 2010,
-                   "2011" = 2011,
-                   "2012" = 2012,
-                   "2013" = 2013,
-                   "2014" = 2014,
-                   "2015" = 2015,
-                   "2016" = 2016,
-                   "2017" = 2017,
-                   "2018" = 2018,
-                   "2019" = 2019,
-                   "2020" = 2020)
+                   "2010-11" = 2010,
+                   "2011-12" = 2011,
+                   "2012-13" = 2012,
+                   "2013-14" = 2013,
+                   "2014-15" = 2014,
+                   "2015-16" = 2015,
+                   "2016-17" = 2016,
+                   "2017-18" = 2017,
+                   "2018-19" = 2018,
+                   "2019-20" = 2019,
+                   "2020-21" = 2020)
         })
         
         # Selecting data as indicated by drop-downs
         datasetInput <- reactive({
             if(input$cropType == "Corn") {
                 
+                # selection = cornBasis %>% 
+                #     select(date, basis, cityTermName) %>% 
+                #     filter(cityTermName == input$terminal, year(date) == cornBasis$date[which(cornBasis$date %within% 
+                #                                                                                   marketingYears$interval[which(marketingYears$Year == yearInput())])])
+                
                 selection = cornBasis %>% 
                     select(date, basis, cityTermName) %>% 
-                    filter(cityTermName == input$terminal, year(date) == yearInput())
+                    filter(cityTermName == input$terminal)
+                
+                selection = selection[which(selection$date %within% 
+                                                marketingYears$interval[which(marketingYears$Year == yearInput())]),]
                 
                 return(selection)
             }
             
             if(input$cropType == "Soybeans") {
-                
+
                 selection = soybeanBasis %>% 
                     select(date, basis, cityTermName) %>% 
-                    filter(cityTermName == input$terminal, year(date) == yearInput())
+                    filter(cityTermName == input$terminal)
+                
+                selection = selection[which(selection$date %within% 
+                                                marketingYears$interval[which(marketingYears$Year == yearInput())]),]
+                                
+                # selection = soybeanBasis %>% 
+                #     select(date, basis, cityTermName) %>% 
+                #     filter(cityTermName == input$terminal, year(date) == yearInput())
                 
                 return(selection)
             }
@@ -145,7 +171,7 @@ shinyApp(
                 ggplotly(ggplot(data = datasetInput(), aes(x = date, y = basis, group = 1)) +
                              geom_line() +
                              labs(x = "Date", y = "Basis ($)") +
-                             ggtitle(paste(input$terminal, ": ", yearInput(), 
+                             ggtitle(paste(input$terminal, ": ", paste(yearInput(), "-", (yearInput() + 1)), 
                                            " (", input$cropType, ")", sep = "")) +
                              scale_x_date(date_breaks = "1 month", labels = date_format("%b")))
             }
@@ -160,16 +186,22 @@ shinyApp(
             }
         )
         
-        # selection = soybeanBasis %>%
-        #     select(date, basis, cityTermName) %>%
-        #     filter(cityTermName == "Adrian, Scoular Grain", year(date) == 2018)
+        
+        # selection = cornBasis %>% 
+        #     select(date, basis, cityTermName) %>% 
+        #     filter(cityTermName == "Adrian, Scoular Grain")
         # 
-        # library(scales)
-        # ggplotly(ggplot(data = selection, aes(x = date, y = basis, group = 1)) +
-        #              geom_line() +
-        #              ggtitle(paste("title: ", year(selection$date)[1])) +
-        #              scale_x_date(date_breaks = "1 month", labels = date_format("%b"))
-        # )
+        # selection = selection[which(selection$date %within% 
+        #                                 marketingYears$interval[which(marketingYears$Year == 2018)]),]
+        
+        
+        # selection = soybeanBasis %>% select(date, basis, cityTermName) %>%
+        #     filter(cityTermName == "Adrian, Scoular Grain", year(date) == 2018)
+        
+        # library(scales) 
+        # ggplotly(ggplot(data = selection, aes(x = date, y = basis, group = 1)) + geom_line() + 
+        #              ggtitle(paste("title: ", year(selection$date)[1])) + 
+        #              scale_x_date(date_breaks = "1 month", labels = date_format("%b")) )
         
         # ggplot(data = soybeanBasis[colsSoybean], aes(x = date, y = basis, group = 1)) + geom_line()
         
