@@ -14,7 +14,7 @@ library(scales)
 # Load data
 cornBasis = read_csv("https://raw.githubusercontent.com/fapri/MarketResearch/project/Decoupling/Basis/basisCharting/Data/cornBasis.csv")
 soybeanBasis = read_csv("https://raw.githubusercontent.com/fapri/MarketResearch/project/Decoupling/Basis/basisCharting/Data/soybeanBasis.csv")
-marketingYears = read_csv("Data/marketingYears.csv")
+marketingYears = read_csv("https://raw.githubusercontent.com/fapri/MarketResearch/project/Decoupling/Basis/basisCharting/Data/marketingYears.csv")
 
 # Convert dates to date type
 cornBasis$date = mdy(cornBasis$date)
