@@ -5,9 +5,9 @@ account: escully
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 3097975
-bundleId: 3785546
+bundleId: 3789683
 url: https://escully.shinyapps.io/basisCharting/
-when: 1603756241.71888
+when: 1603839926.76255
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: Data/cornBasis.csv|Data/marketingYears.csv|Data/soybeanBasis.csv
