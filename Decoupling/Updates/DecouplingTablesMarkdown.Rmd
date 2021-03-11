@@ -1,4 +1,5 @@
 ---
+title: ""
 output: html_document
 params:
   program:
@@ -26,16 +27,25 @@ params:
     choices: [Area of a Crop or Crops,
               Yield,
               Production of a Crop or Crops]
-  save:
-    label: "Save Plots After Running?"
+  savePCOPUP:
+    label: "Save PCOPUP Table?"
+    value: TRUE
+  savePI2MI:
+    label: "Save PI2MI Table?"
+    value: TRUE
+  saveElasMarket:
+    label: "Save Market Elasticity Table?"
+    value: TRUE
+  saveElasPayment:
+    label: "Save Market Payment Table?"
     value: TRUE
 ---
 <style>
 .main-container {
-    max-width: 940px;
-    margin-left: 0;
-    margin-right: auto;
-    color: black;
+max-width: 940px;
+margin-left: 0;
+margin-right: auto;
+color: black;
 }
 
 caption {
@@ -49,7 +59,10 @@ font-weight: bold;
 
 selectedProgramText = params$program
 selectedSupplyText = params$supply
-saveStatus = params$save
+savePCOPUPStatus = params$savePCOPUP
+savePI2MIStatus = params$savePI2MI
+saveElasMarketStatus = params$saveElasMarket
+saveElasPaymentStatus = params$saveElasPayment
 
 ```
 

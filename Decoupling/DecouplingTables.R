@@ -15,7 +15,7 @@ library(officer)
 library(tidyverse)
 
 # Load data from markdown file
-DcData = read_excel("DecouplingLitDataNew.xlsx", 
+DcData = read_excel("Decoupling/DecouplingLitDataNew.xlsx", 
                     col_names = FALSE)
 # # From R file
 # DcData = read_excel("Decoupling/DecouplingLitDataNew.xlsx",

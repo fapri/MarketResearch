@@ -19,11 +19,11 @@ library(tidyverse)
 # Load data from markdown file
 #setwd('C:/Users/gerlts/downloads')
 # setwd('D:/Art/Decoupling/2018 OCE/LitRev/DataArticles/RCode_Tables')
-# DcData = read_excel("DecouplingLitDataNew.xlsx", 
-#                     col_names = FALSE)
-# # From R file
-DcData = read_excel("Decoupling/Updates/DecouplingLitDataNew.xlsx",
+DcData = read_excel("DecouplingLitDataNew.xlsx",
                     col_names = FALSE)
+# # From R file
+# DcData = read_excel("Decoupling/Updates/DecouplingLitDataNew.xlsx",
+#                     col_names = FALSE)
 
 # Renumber columns
 colnames(DcData) = paste0("c", seq(from = 1, to = ncol(DcData), by = 1))
@@ -120,7 +120,9 @@ tempAvenues = c("PriceEffect_",
 # Create vector of values needed for table
 factors = c("Relavancy",
             "PCOPUP",
-            "PI2MI")
+            "PI2MI",
+            "ElasMarket",
+            "ElasPayment")
 
 # match each avenue to all factors
 avenues = vector()
@@ -161,37 +163,37 @@ subLists = list("usNat" = templateList,
 ####################### CALCULATIONS #######################
 
 # Needed if you run the R code outside of the rmarkdown
-# Set program choices for user
-programChoices = c("All during period",
-                   "Crop insurance",
-                   "ARC",
-                   "PLC",
-                   "SCO",
-                   "CCP",
-                   "ACRE",
-                   "Market loss assistance",
-                   "Fixed direct payment (contract payment)",
-                   "Marketing Loan program",
-                   "Milk Income Loss Contract (MILC)",
-                   "Margin Protection Program",
-                   "Pre-1996 US policy",
-                   "Other"
-)
-
-# Set supply choices for user
-supplyChoices = c("Area of a Crop or Crops",
-                  "Yield",
-                  "Production of a Crop or Crops")
-
-# Dialogue boxes for user input
-# selectedProgramText = dlgList(programChoices, preselect = NULL, multiple = FALSE,
-#                           title = "Program Type")$res
-selectedProgramText = "Fixed direct payment (contract payment)"
-
-# Dialogue boxes for user input
-# selectedSupplyText = dlgList(supplyChoices, preselect = NULL, multiple = FALSE,
-#                          title = "Supply Type")$res
-selectedSupplyText = "Area of a Crop or Crops"
+# # Set program choices for user
+# programChoices = c("All during period",
+#                    "Crop insurance",
+#                    "ARC",
+#                    "PLC",
+#                    "SCO",
+#                    "CCP",
+#                    "ACRE",
+#                    "Market loss assistance",
+#                    "Fixed direct payment (contract payment)",
+#                    "Marketing Loan program",
+#                    "Milk Income Loss Contract (MILC)",
+#                    "Margin Protection Program",
+#                    "Pre-1996 US policy",
+#                    "Other"
+# )
+# 
+# # Set supply choices for user
+# supplyChoices = c("Area of a Crop or Crops",
+#                   "Yield",
+#                   "Production of a Crop or Crops")
+# 
+# # Dialogue boxes for user input
+# # selectedProgramText = dlgList(programChoices, preselect = NULL, multiple = FALSE,
+# #                           title = "Program Type")$res
+# selectedProgramText = "All during period"
+# 
+# # Dialogue boxes for user input
+# # selectedSupplyText = dlgList(supplyChoices, preselect = NULL, multiple = FALSE,
+# #                          title = "Supply Type")$res
+# selectedSupplyText = "Area of a Crop or Crops"
 
 # Convert user selection to list key name for access by name
 selectedProgram = switch(selectedProgramText,
@@ -249,12 +251,6 @@ DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]] =
 # Get cross effect indexes
 noCrossEffect = as.numeric(gsub(0, NA, 1 - DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]]))
 crossEffect = as.numeric(gsub(0, NA, DcList[["OtherCrossEffects_IsThisColumnACrosseffect"]]))
-
-
-# i=2
-# subList = subLists[[i]]
-# programId = names(subLists)[i]
-# tableType = selectedSupply
 
 # Create sublists of the calculations
 calcLists = function(subList, programId, tableType) {
@@ -325,21 +321,31 @@ calcLists = function(subList, programId, tableType) {
     Relavancy = grep("Relavancy", names(subList[avenue]))
     PCOPUP = grep("PCOPUP", names(subList[avenue]))
     PI2MI = grep("PI2MI", names(subList[avenue]))
+    ElasMarket = grep("ElasMarket", names(subList[avenue]))
+    ElasPayment = grep("ElasPayment", names(subList[avenue]))
     
     subList[[avenue[Relavancy]]][["data"]] = programMaster * areaMaster * extraFactors * crossEffectFactor *
       DcList[[which((sub(".*_", "", names(DcList))) == sub("\\_.*", "", names((subList[i]))))]]
     subList[[avenue[PCOPUP]]][["data"]] = subList[[avenue[Relavancy]]]$data * (DcList[["ImpactOfPayments_ChangeInOutputPerPayment"]])
     subList[[avenue[PI2MI]]][["data"]] = subList[[avenue[Relavancy]]]$data * DcList[["Ratio_RatioOfPmtImpToMarketImp"]]
+    subList[[avenue[ElasMarket]]][["data"]] = subList[[avenue[Relavancy]]]$data * DcList[["Elasticities_Market"]]
+    subList[[avenue[ElasPayment]]][["data"]] = subList[[avenue[Relavancy]]]$data * DcList[["Elasticities_Payment"]]
     
     dataIncludedIndexPCOPUP = rep(NA, times = length(subList[[avenue[Relavancy]]]$data))
     dataIncludedIndexPI2MI = rep(NA, times = length(subList[[avenue[Relavancy]]]$data))
+    dataIncludedIndexElasMarket = rep(NA, times = length(subList[[avenue[Relavancy]]]$data))
+    dataIncludedIndexElasPayment = rep(NA, times = length(subList[[avenue[Relavancy]]]$data))
     
     dataIncludedIndexPCOPUP[which(!is.na(subList[[avenue[PCOPUP]]]$data))] = 1
     dataIncludedIndexPI2MI[which(!is.na(subList[[avenue[PI2MI]]]$data))] = 1
+    dataIncludedIndexElasMarket[which(!is.na(subList[[avenue[ElasMarket]]]$data))] = 1
+    dataIncludedIndexElasPayment[which(!is.na(subList[[avenue[ElasPayment]]]$data))] = 1
     
     subList[[avenue[Relavancy]]]$studyIndex = subList[[avenue[Relavancy]]]$data * DcList[["Study_NA"]]
     subList[[avenue[PCOPUP]]]$studyIndex = dataIncludedIndexPCOPUP * DcList[["Study_NA"]]
     subList[[avenue[PI2MI]]]$studyIndex = dataIncludedIndexPI2MI * DcList[["Study_NA"]]
+    subList[[avenue[ElasMarket]]]$studyIndex = dataIncludedIndexElasMarket * DcList[["Study_NA"]]
+    subList[[avenue[ElasPayment]]]$studyIndex = dataIncludedIndexElasPayment * DcList[["Study_NA"]]
   }
   return(subList)
 }
@@ -351,10 +357,6 @@ calcLists = function(subList, programId, tableType) {
 for (i in seq_len(length(subLists))) {
   subLists[[i]] = calcLists(subLists[[i]], names(subLists)[i], selectedSupply)
 }
-
-
-# i=2
-# subList = subLists[[i]]
 
 # Calculates the number of observations triggered and averages the values
 calcStats = function(subList) {
@@ -402,8 +404,8 @@ for (i in seq_len(length(subLists))) {
 
 
 # Template for loading data into the table
-tableTemplate = read_excel("Decoupling/Updates/tableTemplate.xlsx", col_names = TRUE, sheet = 1)
-# tableTemplate = read_excel("tableTemplate.xlsx", col_names = TRUE, sheet = 1)
+# tableTemplate = read_excel("Decoupling/Updates/tableTemplate.xlsx", col_names = TRUE, sheet = 1)
+tableTemplate = read_excel("tableTemplate.xlsx", col_names = TRUE, sheet = 1)
 tableTemplate = as.data.frame(tableTemplate)
 
 # column pattern
@@ -433,6 +435,8 @@ cols3 =  grep(pattern = "3", x = tableTemplate[1, ]) # median/Ai weighted avg
 for (name in names(subLists)) {
   PCOPUPindexes = grep(pattern = "PCOPUP", x = names(subLists[[name]]))
   PI2MIindexes = grep(pattern = "PI2MI", x = names(subLists[[name]]))
+  ElasMarketindexes = grep(pattern = "ElasMarket", x = names(subLists[[name]]))
+  ElasPaymentindexes = grep(pattern = "ElasPayment", x = names(subLists[[name]]))
   
   # Gets the rows for PCOPUP
   PCOPUProw1 = grep(pattern = paste0(name, 1), x = tableTemplate$index)[1]
@@ -440,9 +444,17 @@ for (name in names(subLists)) {
   # Gets the rows for PI2MI
   PI2MIrow1 = grep(pattern = paste0(name, 1), x = tableTemplate$index)[2]
   PI2MIrow2 = grep(pattern = paste0(name, 2), x = tableTemplate$index)[2]
+  # Gets the rows for ElasMarket
+  ElasMarketrow1 = grep(pattern = paste0(name, 1), x = tableTemplate$index)[3]
+  ElasMarketrow2 = grep(pattern = paste0(name, 2), x = tableTemplate$index)[3]
+  # Gets the rows for ElasPayment
+  ElasPaymentrow1 = grep(pattern = paste0(name, 1), x = tableTemplate$index)[4]
+  ElasPaymentrow2 = grep(pattern = paste0(name, 2), x = tableTemplate$index)[4]
   
   equalityOfLength = all(sapply(list(length(subLists[[name]][PCOPUPindexes]), 
                                      length(subLists[[name]][PI2MIindexes]),
+                                     length(subLists[[name]][ElasMarketindexes]), 
+                                     length(subLists[[name]][ElasPaymentindexes]),
                                      length(cols1), length(cols2), 
                                      length(cols3)), function(x) 
                                        x == length(subLists[[name]][PCOPUPindexes])))
@@ -450,6 +462,7 @@ for (name in names(subLists)) {
   if (equalityOfLength) {
     for (i in seq_len(length(subLists[[name]][PCOPUPindexes]))) {
       
+      # Fill values for case count and study count
       if (subLists[[name]][[PCOPUPindexes[i]]]$count == 0 & subLists[[name]][[PCOPUPindexes[i]]]$studyCount == 0) {
         tableTemplate[PCOPUProw1, cols1[i]] = NA
         tableTemplate[PCOPUProw1, cols2[i]] = NA
@@ -466,19 +479,46 @@ for (name in names(subLists)) {
         tableTemplate[PI2MIrow1, cols2[i]] = subLists[[name]][[PI2MIindexes[i]]]$studyCount
       }
       
+      if (subLists[[name]][[ElasMarketindexes[i]]]$count == 0 & subLists[[name]][[ElasMarketindexes[i]]]$studyCount == 0) {
+        tableTemplate[ElasMarketrow1, cols1[i]] = NA
+        tableTemplate[ElasMarketrow1, cols2[i]] = NA
+      } else {
+        tableTemplate[ElasMarketrow1, cols1[i]] = subLists[[name]][[ElasMarketindexes[i]]]$count
+        tableTemplate[ElasMarketrow1, cols2[i]] = subLists[[name]][[ElasMarketindexes[i]]]$studyCount
+      }
+      
+      if (subLists[[name]][[ElasPaymentindexes[i]]]$count == 0 & subLists[[name]][[ElasPaymentindexes[i]]]$studyCount == 0) {
+        tableTemplate[ElasPaymentrow1, cols1[i]] = NA
+        tableTemplate[ElasPaymentrow1, cols2[i]] = NA
+      } else {
+        tableTemplate[ElasPaymentrow1, cols1[i]] = subLists[[name]][[ElasPaymentindexes[i]]]$count
+        tableTemplate[ElasPaymentrow1, cols2[i]] = subLists[[name]][[ElasPaymentindexes[i]]]$studyCount
+      }
+      
       # cell c
       tableTemplate[PCOPUProw1, cols3[i]] = nearZero(subLists[[name]][[PCOPUPindexes[i]]]$median)
       tableTemplate[PI2MIrow1, cols3[i]] = nearZero(subLists[[name]][[PI2MIindexes[i]]]$median)
+      tableTemplate[ElasMarketrow1, cols3[i]] = nearZero(subLists[[name]][[ElasMarketindexes[i]]]$median)
+      tableTemplate[ElasPaymentrow1, cols3[i]] = nearZero(subLists[[name]][[ElasPaymentindexes[i]]]$median)
       
       # cell d
       tableTemplate[PCOPUProw2, cols1[i]] = nearZero(subLists[[name]][[PCOPUPindexes[i]]]$simpleAvg)
       tableTemplate[PI2MIrow2, cols1[i]] = nearZero(subLists[[name]][[PI2MIindexes[i]]]$simpleAvg)
+      tableTemplate[ElasMarketrow2, cols1[i]] = nearZero(subLists[[name]][[ElasMarketindexes[i]]]$simpleAvg)
+      tableTemplate[ElasPaymentrow2, cols1[i]] = nearZero(subLists[[name]][[ElasPaymentindexes[i]]]$simpleAvg)
+      
       # cell e
       tableTemplate[PCOPUProw2, cols2[i]] = nearZero(subLists[[name]][[PCOPUPindexes[i]]]$studyWeightAvg)
       tableTemplate[PI2MIrow2, cols2[i]] = nearZero(subLists[[name]][[PI2MIindexes[i]]]$studyWeightAvg)
+      tableTemplate[ElasMarketrow2, cols2[i]] = nearZero(subLists[[name]][[ElasMarketindexes[i]]]$studyWeightAvg)
+      tableTemplate[ElasPaymentrow2, cols2[i]] = nearZero(subLists[[name]][[ElasPaymentindexes[i]]]$studyWeightAvg)
+      
       # cell f
       tableTemplate[PCOPUProw2, cols3[i]] = NA
       tableTemplate[PI2MIrow2, cols3[i]] = NA
+      tableTemplate[ElasMarketrow2, cols3[i]] = NA
+      tableTemplate[ElasPaymentrow2, cols3[i]] = NA
+      
     }
   } else {
     stop("Sublist length and column length are not equal. Make sure that any added avenues 
@@ -506,7 +546,6 @@ rownames(tableTemplate) = NULL
 
 # Function to create and format the flex tables
 makeTables = function(myft) {
-  
   # Merge duplicate columns, row-wise
   myft = merge_at(myft, i = 1, j = 1:10)
   myft = merge_at(myft, i = 2, j = 2:3)
@@ -588,10 +627,27 @@ makeTables = function(myft) {
 
 tablePCOPUP = makeTables(flextable(tableTemplate[1:25,]))
 tablePI2MI = makeTables(flextable(tableTemplate[26:50,]))
+tableElasMarket = makeTables(flextable(tableTemplate[51:75,]))
+tableElasPayment = makeTables(flextable(tableTemplate[76:100,]))
 
-if(saveStatus == 1) {
-  program = paste(selectedProgram, selectedSupply, sep = "_")
-  
+
+program = paste(selectedProgram, selectedSupply, sep = "_")
+
+if(savePCOPUPStatus == 1) {
   save_as_image(tablePCOPUP, paste0(program, "_PCOPUP.jpg"), zoom = 1, expand = 10)
+}
+if(savePI2MIStatus == 1) {
   save_as_image(tablePI2MI, paste0(program, "_PI2MI.jpg"), zoom = 1, expand = 10)
 }
+if(saveElasMarketStatus == 1) {
+  save_as_image(tableElasMarket, paste0(program, "_ElasMarket.jpg"), zoom = 1, expand = 10)
+}
+if(saveElasPaymentStatus == 1) {
+  save_as_image(tableElasPayment, paste0(program, "_ElasPayment.jpg"), zoom = 1, expand = 10)
+}
+
+
+
+
+
+
